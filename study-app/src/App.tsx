@@ -31,7 +31,7 @@ export default function App() {
   const [view, setView] = useState<View>('home');
   const [savedSessions, setSavedSessions] = useState<Session[]>([]);
   const [viewerConfig, setViewerConfig]   = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
-  const [activityOpen, setActivityOpen]   = useState(false);
+  const [activityOpen, setActivityOpen]   = useState(true);
   const [jumpRequest,  setJumpRequest]    = useState<number | null>(null);
   const homeRef   = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);

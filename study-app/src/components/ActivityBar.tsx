@@ -48,6 +48,7 @@ function Thumbnail({ url, pageNum, isActive, onClick }: ThumbProps) {
     <div
       ref={ref}
       className={`${styles.thumb} ${isActive ? styles.thumbActive : ''}`}
+      style={{ aspectRatio: '1 / 1.414' }}
       onClick={onClick}
       title={`Página ${pageNum}`}
     >
@@ -55,7 +56,7 @@ function Thumbnail({ url, pageNum, isActive, onClick }: ThumbProps) {
         <Document file={url} loading={null} error={null}>
           <Page
             pageNumber={pageNum}
-            width={110}
+            width={160}
             renderAnnotationLayer={false}
             renderTextLayer={false}
           />
@@ -70,8 +71,22 @@ function Thumbnail({ url, pageNum, isActive, onClick }: ThumbProps) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+const ANIM_MS = 220;
+
 export default function ActivityBar({ isOpen, onToggle, session, currentFile, onJumpToPage, onSwitchFile }: Props) {
   const [section, setSection] = useState<Section>('pages');
+  const [visible, setVisible] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisible(true);
+    } else {
+      const t = setTimeout(() => setVisible(false), ANIM_MS);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
+
+  const closing = visible && !isOpen;
 
   const numPages   = currentFile?.totalPages ?? 0;
   const currentPage = currentFile?.currentPage ?? 1;
@@ -79,19 +94,9 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
   const handleJump = useCallback((p: number) => onJumpToPage(p), [onJumpToPage]);
 
   return (
-    <>
-      {/* Collapse / expand button — always visible */}
-      <button
-        className={styles.toggleBtn}
-        onClick={onToggle}
-        aria-label={isOpen ? 'Cerrar panel' : 'Abrir panel'}
-        title={isOpen ? 'Cerrar panel' : 'Abrir panel'}
-      >
-        {isOpen ? '›' : '‹'}
-      </button>
-
-      {isOpen && (
-        <aside className={styles.panel}>
+    <div className={styles.wrapper}>
+      {visible && (
+      <aside className={`${styles.panel} ${closing ? styles.panelExit : styles.panelEnter}`}>
           {/* Section tabs */}
           <div className={styles.tabs}>
             <button
@@ -156,8 +161,18 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
               })}
             </div>
           )}
-        </aside>
+      </aside>
       )}
-    </>
+
+      {/* Collapse / expand button — always visible on the far right */}
+      <button
+        className={styles.toggleBtn}
+        onClick={onToggle}
+        aria-label={isOpen ? 'Cerrar panel' : 'Abrir panel'}
+        title={isOpen ? 'Cerrar panel' : 'Abrir panel'}
+      >
+        {isOpen ? '<' : '>'}
+      </button>
+    </div>
   );
 }
