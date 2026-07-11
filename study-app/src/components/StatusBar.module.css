@@ -1,0 +1,90 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--bar-bg);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.filename {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.counter {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: 'Orbitron', sans-serif;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+  width: clamp(120px, 30vw, 280px);
+}
+
+.track {
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease, background 0.6s ease;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.percentages {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-family: 'Orbitron', sans-serif;
+  margin-top: 1px;
+}
+
+.closeBtn {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 60, 60, 0.15);
+  border-color: rgba(255, 60, 60, 0.4);
+  color: #ff6666;
+}
+
+@media (max-width: 480px) {
+  .bar { flex-wrap: wrap; gap: 8px; }
+  .bars { width: 100%; order: 3; }
+  .closeBtn { padding: 6px 12px; }
+}

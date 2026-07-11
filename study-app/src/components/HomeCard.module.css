@@ -1,0 +1,127 @@
+.card {
+  position: relative;
+  width: min(420px, 90vw);
+  border-radius: 28px;
+  padding: 3px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff00cc, #00ffff, #ff6600, #00ff88, #ff00cc);
+  background-size: 300% 300%;
+  animation: gradientShift 4s ease infinite;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  opacity: 0;
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow:
+    0 0 40px rgba(255, 0, 204, 0.5),
+    0 0 80px rgba(0, 255, 255, 0.3),
+    0 0 120px rgba(0, 255, 136, 0.15);
+}
+
+.card.dragging {
+  transform: scale(1.03);
+  box-shadow:
+    0 0 60px rgba(255, 0, 204, 0.7),
+    0 0 120px rgba(0, 255, 255, 0.5);
+}
+
+.glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 36px;
+  background: inherit;
+  filter: blur(20px);
+  opacity: 0.4;
+  z-index: -1;
+  background-size: 300% 300%;
+  animation: gradientShift 4s ease infinite;
+}
+
+.inner {
+  background: var(--card-bg);
+  border-radius: 26px;
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.icon {
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(255, 0, 204, 0.6));
+  transition: transform 0.2s ease;
+}
+
+.card:hover .icon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.title {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ff00cc, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.dropIndicator {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.dropIndicator span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.dropIndicator span:nth-child(2) { animation-delay: 0.2s; }
+.dropIndicator span:nth-child(3) { animation-delay: 0.4s; }
+
+.folderBtn {
+  margin-top: 8px;
+  padding: 10px 24px;
+  border: 2px solid var(--accent);
+  border-radius: 50px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.folderBtn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.04);
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}

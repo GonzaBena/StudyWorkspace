@@ -1,0 +1,91 @@
+.homeLayout {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 24px 32px 0;
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ff00cc, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.05em;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px 100px;
+  gap: 0;
+}
+
+.readerLayout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.allDone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+}
+
+.doneEmoji {
+  font-size: 80px;
+  animation: bounce 1s ease infinite alternate;
+}
+
+.allDone h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  background: linear-gradient(90deg, #ff00cc, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.allDone p {
+  color: var(--text-muted);
+}
+
+.doneBtn {
+  margin-top: 8px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #ff00cc, #00ffff);
+  border: none;
+  border-radius: 50px;
+  color: #fff;
+  font-size: 1rem;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.doneBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 24px rgba(255, 0, 204, 0.4), 0 0 48px rgba(0, 255, 255, 0.2);
+}
+
+@keyframes bounce {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-12px) scale(1.05); }
+}

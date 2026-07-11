@@ -1,0 +1,95 @@
+.section {
+  width: min(420px, 90vw);
+  margin-top: 32px;
+}
+
+.heading {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 12px 4px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  opacity: 0;
+}
+
+.resumeBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.resumeBtn:hover {
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+
+.name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.deleteBtn {
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  line-height: 1;
+}
+
+.deleteBtn:hover {
+  background: rgba(255, 60, 60, 0.15);
+  border-color: rgba(255, 60, 60, 0.5);
+  color: #ff4444;
+}
