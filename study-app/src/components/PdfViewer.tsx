@@ -126,6 +126,11 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
     observerRef.current = obs;
     pageElemsRef.current.forEach(el => obs.observe(el));
 
+    // Scroll to current page immediately so the observer fires at the right position,
+    // not at position 0 (which would incorrectly report page 1 as most visible).
+    const targetEl = pageElemsRef.current.get(scrollPageRef.current);
+    if (targetEl) targetEl.scrollIntoView({ behavior: 'instant', block: 'start' });
+
     return () => { obs.disconnect(); observerRef.current = null; };
   }, [viewMode, numPages, fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
