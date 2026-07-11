@@ -51,7 +51,6 @@ function Thumbnail({ pageNum, isActive, onClick }: ThumbProps) {
     <div
       ref={ref}
       className={`${styles.thumb} ${isActive ? styles.thumbActive : ''}`}
-      style={{ aspectRatio: '1 / 1.414' }}
       onClick={onClick}
       title={`Página ${pageNum}`}
     >
@@ -73,10 +72,17 @@ function Thumbnail({ pageNum, isActive, onClick }: ThumbProps) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 const ANIM_MS = 220;
+const MIN_WIDTH = 200;
+const MAX_WIDTH_VW = 0.4;
+const DRAG_THRESHOLD = 4;
 
 export default function ActivityBar({ isOpen, onToggle, session, currentFile, numPages, onJumpToPage, onSwitchFile, onReorderFiles }: Props) {
   const [section, setSection] = useState<Section>('pages');
   const [visible, setVisible] = useState(isOpen);
+  const [panelWidth, setPanelWidth] = useState(MIN_WIDTH);
+  const panelWidthRef = useRef(MIN_WIDTH);
+  const panelElRef = useRef<HTMLElement>(null);
+  const dragRef = useRef<{ startX: number; startWidth: number; dragging: boolean } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,10 +102,44 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
 
   const handleJump = useCallback((p: number) => onJumpToPage(p), [onJumpToPage]);
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startWidth: panelWidthRef.current, dragging: false };
+
+    const onMove = (ev: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const delta = d.startX - ev.clientX;
+      if (!d.dragging && Math.abs(delta) > DRAG_THRESHOLD) d.dragging = true;
+      if (d.dragging && panelElRef.current) {
+        const max = window.innerWidth * MAX_WIDTH_VW;
+        const w = Math.round(Math.max(MIN_WIDTH, Math.min(max, d.startWidth + delta)));
+        panelElRef.current.style.width = w + 'px';
+      }
+    };
+
+    const onUp = () => {
+      const d = dragRef.current;
+      if (d && !d.dragging) {
+        onToggle();
+      } else if (d && panelElRef.current) {
+        const w = parseInt(panelElRef.current.style.width, 10);
+        panelWidthRef.current = w;
+        setPanelWidth(w);
+      }
+      dragRef.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [onToggle]);
+
   return (
     <div className={styles.wrapper}>
       {visible && (
-      <aside className={`${styles.panel} ${closing ? styles.panelExit : styles.panelEnter}`}>
+      <aside ref={panelElRef} className={`${styles.panel} ${closing ? styles.panelExit : styles.panelEnter}`} style={{ width: panelWidth }}>
           {/* Section tabs */}
           <div className={styles.tabs}>
             <button
@@ -124,7 +164,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
 
           {/* Pages section */}
           {section === 'pages' && (
-            <div className={styles.content}>
+            <div className={`${styles.content} ${styles.contentPages}`}>
               {!currentFile ? (
                 <p className={styles.empty}>Sin archivo abierto.</p>
               ) : numPages === 0 ? (
@@ -199,9 +239,9 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
       {/* Collapse / expand button — always visible on the far right */}
       <button
         className={`${styles.toggleBtn} ${!isOpen ? styles.toggleBtnClosed : ''}`}
-        onClick={onToggle}
+        onMouseDown={handleMouseDown}
         aria-label={isOpen ? 'Cerrar panel' : 'Abrir panel'}
-        title={isOpen ? 'Cerrar panel' : 'Abrir panel'}
+        title={isOpen ? 'Cerrar panel (arrastrar para redimensionar)' : 'Abrir panel'}
       >
         {isOpen ? '›' : '‹'}
       </button>
