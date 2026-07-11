@@ -4,8 +4,14 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import styles from './PdfViewer.module.css';
 
-type ZoomMode = 'fit-width' | 'fit-height' | 'custom';
+type ZoomMode     = 'fit-width' | 'fit-height' | 'custom';
 type InteractMode = 'pan' | 'select';
+
+export interface ViewerConfig {
+  zoomMode:     ZoomMode;
+  customScale:  number;
+  interactMode: InteractMode;
+}
 
 const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
@@ -15,28 +21,46 @@ interface Props {
   initialPage: number;
   onPageChange: (fileId: string, page: number, total: number) => void;
   onComplete: () => void;
+  config: ViewerConfig;
+  onConfigChange: (c: ViewerConfig) => void;
 }
 
-export default function PdfViewer({ url, fileId, initialPage, onPageChange, onComplete }: Props) {
+export default function PdfViewer({ url, fileId, initialPage, onPageChange, onComplete, config, onConfigChange }: Props) {
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(initialPage);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerWidth, setContainerWidth]   = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  const [zoomMode, setZoomMode] = useState<ZoomMode>('fit-width');
-  const [customScale, setCustomScale] = useState(1);
+  const [zoomMode,     setZoomMode]     = useState<ZoomMode>(config.zoomMode);
+  const [customScale,  setCustomScale]  = useState(config.customScale);
+  const [interactMode, setInteractMode] = useState<InteractMode>(config.interactMode);
   const [naturalPageSize, setNaturalPageSize] = useState<{ width: number; height: number } | null>(null);
-  const [interactMode, setInteractMode] = useState<InteractMode>('select');
   const [dragging, setDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dragPos  = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
-  const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
-  // Always holds the latest effective scale so touch handlers don't capture stale state
+  // Page jump input
+  const [editingPage, setEditingPage]   = useState(false);
+  const [pageInput,   setPageInput]     = useState('');
+  const pageInputRef = useRef<HTMLInputElement>(null);
+  const containerRef    = useRef<HTMLDivElement>(null);
+  const dragPos         = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const pinchRef        = useRef<{ dist: number; scale: number } | null>(null);
   const currentScaleRef = useRef(1);
+  const configSynced    = useRef(false); // skip propagating on first render
 
   useEffect(() => {
     setPage(initialPage);
     setNaturalPageSize(null);
+    configSynced.current = false; // reset so the new file doesn't fire a spurious config update
   }, [fileId, initialPage]);
+
+  // Propagate config changes to parent (skip initial mount per file)
+  useEffect(() => {
+    if (!configSynced.current) { configSynced.current = true; return; }
+    onConfigChange({ zoomMode, customScale, interactMode });
+  }, [zoomMode, customScale, interactMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-focus + select-all when the page input appears
+  useEffect(() => {
+    if (editingPage) pageInputRef.current?.select();
+  }, [editingPage]);
 
   useEffect(() => {
     const ro = new ResizeObserver(entries => {
@@ -166,6 +190,28 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
     setCustomScale(prev ?? ZOOM_STEPS[0]);
   }, [getEffectiveScale]);
 
+  // Page jump input
+  const startPageEdit = useCallback(() => {
+    setPageInput(String(page));
+    setEditingPage(true);
+  }, [page]);
+
+  const commitPageEdit = useCallback(() => {
+    const n = parseInt(pageInput, 10);
+    if (!isNaN(n) && n >= 1 && n <= numPages) {
+      setPage(n);
+      onPageChange(fileId, n, numPages);
+    }
+    setEditingPage(false);
+  }, [pageInput, numPages, fileId, onPageChange]);
+
+  const cancelPageEdit = useCallback(() => setEditingPage(false), []);
+
+  const onPageInputKey = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') commitPageEdit();
+    if (e.key === 'Escape') cancelPageEdit();
+  }, [commitPageEdit, cancelPageEdit]);
+
   // Mouse pan handlers
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (interactMode !== 'pan') return;
@@ -225,7 +271,23 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
       <nav className={styles.nav}>
         <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn}>← Anterior</button>
 
-        <span className={styles.pageNum}>{page} / {numPages || '…'}</span>
+        {editingPage ? (
+          <input
+            ref={pageInputRef}
+            className={styles.pageInput}
+            type="number"
+            min={1}
+            max={numPages}
+            value={pageInput}
+            onChange={e => setPageInput(e.target.value)}
+            onBlur={commitPageEdit}
+            onKeyDown={onPageInputKey}
+          />
+        ) : (
+          <button className={styles.pageNum} onClick={startPageEdit} title="Haz clic para ir a una página">
+            {page} / {numPages || '…'}
+          </button>
+        )}
 
         <div className={styles.toolbar}>
           {/* Mode toggle */}

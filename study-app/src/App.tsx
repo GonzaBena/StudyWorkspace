@@ -8,7 +8,7 @@ import { getSessions } from './utils/session';
 import HomeCard from './components/HomeCard';
 import RecentSessions from './components/RecentSessions';
 import StatusBar from './components/StatusBar';
-import PdfViewer from './components/PdfViewer';
+import PdfViewer, { type ViewerConfig } from './components/PdfViewer';
 import DarkModeToggle from './components/DarkModeToggle';
 import type { Session } from './types';
 import './index.css';
@@ -18,12 +18,19 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 type View = 'home' | 'reader';
 
+const DEFAULT_VIEWER_CONFIG: ViewerConfig = {
+  zoomMode: 'fit-width',
+  customScale: 1,
+  interactMode: 'select',
+};
+
 export default function App() {
   const { isDark, toggle } = useDarkMode();
   const { session, currentFile, allDone, fileListProgress, openFiles, openFolder, resumeSession, updatePage, completeFile, closeSession, deleteSession } = useSession();
   const [view, setView] = useState<View>('home');
   const [savedSessions, setSavedSessions] = useState<Session[]>([]);
-  const homeRef = useRef<HTMLDivElement>(null);
+  const [viewerConfig, setViewerConfig] = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
+  const homeRef   = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,6 +99,8 @@ export default function App() {
             initialPage={currentFile.currentPage}
             onPageChange={updatePage}
             onComplete={completeFile}
+            config={viewerConfig}
+            onConfigChange={setViewerConfig}
           />
         )}
         <DarkModeToggle isDark={isDark} onToggle={toggle} />
