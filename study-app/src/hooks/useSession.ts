@@ -256,13 +256,26 @@ export function useSession() {
     await Promise.allSettled([removeHandles(id), removeFileData(id)]);
   }, []);
 
+  const switchToFile = useCallback((index: number) => {
+    setSession(prev => {
+      if (!prev || index < 0 || index >= prev.files.length) return prev;
+      const updated = { ...prev, currentFileIndex: index, updatedAt: Date.now() };
+      saveSession(updated);
+      return updated;
+    });
+  }, []);
+
   // ── derived ────────────────────────────────────────────────────────────────
 
   const currentFile = session ? session.files[session.currentFileIndex] ?? null : null;
   const allDone     = session ? session.currentFileIndex >= session.files.length : false;
 
-  const completedFiles   = session ? session.files.filter((_, i) => i < session.currentFileIndex).length : 0;
-  const fileListProgress = session?.files.length ? completedFiles / session.files.length : 0;
+  // Average of each file's individual progress (e.g. 10% + 40% → 25% overall)
+  const fileListProgress = session?.files.length
+    ? session.files.reduce((sum, f) =>
+        sum + (f.totalPages > 0 ? f.currentPage / f.totalPages : 0), 0
+      ) / session.files.length
+    : 0;
 
   return {
     session,
@@ -274,6 +287,7 @@ export function useSession() {
     resumeSession,
     updatePage,
     completeFile,
+    switchToFile,
     closeSession,
     deleteSession,
   };

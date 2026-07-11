@@ -37,6 +37,13 @@
   overflow: hidden;
 }
 
+.readerBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
 .allDone {
   flex: 1;
   display: flex;

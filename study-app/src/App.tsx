@@ -9,6 +9,7 @@ import HomeCard from './components/HomeCard';
 import RecentSessions from './components/RecentSessions';
 import StatusBar from './components/StatusBar';
 import PdfViewer, { type ViewerConfig } from './components/PdfViewer';
+import ActivityBar from './components/ActivityBar';
 import DarkModeToggle from './components/DarkModeToggle';
 import type { Session } from './types';
 import './index.css';
@@ -26,10 +27,12 @@ const DEFAULT_VIEWER_CONFIG: ViewerConfig = {
 
 export default function App() {
   const { isDark, toggle } = useDarkMode();
-  const { session, currentFile, allDone, fileListProgress, openFiles, openFolder, resumeSession, updatePage, completeFile, closeSession, deleteSession } = useSession();
+  const { session, currentFile, allDone, fileListProgress, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, closeSession, deleteSession } = useSession();
   const [view, setView] = useState<View>('home');
   const [savedSessions, setSavedSessions] = useState<Session[]>([]);
-  const [viewerConfig, setViewerConfig] = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
+  const [viewerConfig, setViewerConfig]   = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
+  const [activityOpen, setActivityOpen]   = useState(false);
+  const [jumpRequest,  setJumpRequest]    = useState<number | null>(null);
   const homeRef   = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
 
@@ -84,25 +87,37 @@ export default function App() {
           totalFiles={session.files.length}
           onClose={handleClose}
         />
-        {allDone ? (
-          <div className={styles.allDone}>
-            <div className={styles.doneEmoji}>🎉</div>
-            <h2>¡Lista completada!</h2>
-            <p>Terminaste todos los archivos de esta sesión.</p>
-            <button className={styles.doneBtn} onClick={handleClose}>Volver al inicio</button>
-          </div>
-        ) : (
-          <PdfViewer
-            key={currentFile.id}
-            url={currentFile.url!}
-            fileId={currentFile.id}
-            initialPage={currentFile.currentPage}
-            onPageChange={updatePage}
-            onComplete={completeFile}
-            config={viewerConfig}
-            onConfigChange={setViewerConfig}
+        <div className={styles.readerBody}>
+          {allDone ? (
+            <div className={styles.allDone}>
+              <div className={styles.doneEmoji}>🎉</div>
+              <h2>¡Lista completada!</h2>
+              <p>Terminaste todos los archivos de esta sesión.</p>
+              <button className={styles.doneBtn} onClick={handleClose}>Volver al inicio</button>
+            </div>
+          ) : (
+            <PdfViewer
+              key={currentFile.id}
+              url={currentFile.url!}
+              fileId={currentFile.id}
+              initialPage={currentFile.currentPage}
+              onPageChange={updatePage}
+              onComplete={completeFile}
+              config={viewerConfig}
+              onConfigChange={setViewerConfig}
+              jumpRequest={jumpRequest}
+              onJumpApplied={() => setJumpRequest(null)}
+            />
+          )}
+          <ActivityBar
+            isOpen={activityOpen}
+            onToggle={() => setActivityOpen(o => !o)}
+            session={session}
+            currentFile={currentFile}
+            onJumpToPage={setJumpRequest}
+            onSwitchFile={switchToFile}
           />
-        )}
+        </div>
         <DarkModeToggle isDark={isDark} onToggle={toggle} />
       </div>
     );

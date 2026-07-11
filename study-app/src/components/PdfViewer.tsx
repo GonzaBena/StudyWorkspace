@@ -23,9 +23,11 @@ interface Props {
   onComplete: () => void;
   config: ViewerConfig;
   onConfigChange: (c: ViewerConfig) => void;
+  jumpRequest?: number | null;
+  onJumpApplied?: () => void;
 }
 
-export default function PdfViewer({ url, fileId, initialPage, onPageChange, onComplete, config, onConfigChange }: Props) {
+export default function PdfViewer({ url, fileId, initialPage, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied }: Props) {
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(initialPage);
   const [containerWidth, setContainerWidth]   = useState(0);
@@ -50,6 +52,14 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
     setNaturalPageSize(null);
     configSynced.current = false; // reset so the new file doesn't fire a spurious config update
   }, [fileId, initialPage]);
+
+  // External page jump request (from ActivityBar thumbnails)
+  useEffect(() => {
+    if (jumpRequest == null || jumpRequest < 1 || numPages === 0 || jumpRequest > numPages) return;
+    setPage(jumpRequest);
+    onPageChange(fileId, jumpRequest, numPages);
+    onJumpApplied?.();
+  }, [jumpRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Propagate config changes to parent (skip initial mount per file)
   useEffect(() => {

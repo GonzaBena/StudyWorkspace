@@ -1,0 +1,222 @@
+.toggleBtn {
+  position: relative;
+  z-index: 10;
+  width: 24px;
+  flex-shrink: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: var(--bar-bg);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.toggleBtn:hover {
+  background: rgba(0, 200, 255, 0.08);
+  color: var(--accent);
+}
+
+.panel {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 9px 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover { color: var(--text); }
+
+.tabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Scrollable content ────────────────────────────────────────────────────── */
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 24px 8px;
+}
+
+/* ── Page thumbnails ───────────────────────────────────────────────────────── */
+
+.thumb {
+  cursor: pointer;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  transition: border-color 0.15s, background 0.15s;
+  background: transparent;
+}
+
+.thumb:hover {
+  background: rgba(0, 200, 255, 0.06);
+  border-color: var(--border);
+}
+
+.thumbActive {
+  border-color: var(--accent) !important;
+  background: rgba(0, 200, 255, 0.08) !important;
+}
+
+.thumb :global(.react-pdf__Page) {
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  width: 100% !important;
+}
+
+.thumb :global(.react-pdf__Page canvas) {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+.thumbPlaceholder {
+  width: 100%;
+  aspect-ratio: 1 / 1.414;
+  background: var(--border);
+  border-radius: 3px;
+  min-height: 60px;
+}
+
+.thumbNum {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.thumbActive .thumbNum {
+  color: var(--accent);
+}
+
+/* ── File list ─────────────────────────────────────────────────────────────── */
+
+.fileItem {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.fileItem:hover {
+  border-color: var(--accent);
+  background: rgba(0, 200, 255, 0.05);
+}
+
+.fileActive {
+  border-color: var(--accent) !important;
+  background: rgba(0, 200, 255, 0.1) !important;
+}
+
+.fileName {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileProgress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fileBar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fileBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease, background 0.6s ease;
+}
+
+.filePct {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ── Mobile: overlay instead of push ──────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .panel {
+    position: fixed;
+    right: 24px; /* leave room for toggle button */
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+  .toggleBtn {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    z-index: 51;
+  }
+}
