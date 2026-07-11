@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Page } from 'react-pdf';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import {
   ChevronLeft, ChevronRight, RotateCcw, RotateCw, AlignJustify,
   MousePointer2, Hand, ArrowLeftRight, ArrowUpDown, Minus, Plus,
@@ -159,17 +160,19 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
     return () => ro.disconnect();
   }, []);
 
-  // Keyboard shortcuts — arrow keys for page nav, +/- for zoom, H for mode toggle
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goNext();
-      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goPrev();
-      if ((e.key === '+' || e.key === '=') && !e.ctrlKey && !e.metaKey) handleZoomIn();
-      if (e.key === '-' && !e.ctrlKey && !e.metaKey) handleZoomOut();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+  useKeyboardShortcuts({
+    'page.next':       () => goNext(),
+    'page.prev':       () => goPrev(),
+    'zoom.in':         () => handleZoomIn(),
+    'zoom.out':        () => handleZoomOut(),
+    'zoom.fitWidth':   () => setZoomMode('fit-width'),
+    'zoom.fitHeight':  () => setZoomMode('fit-height'),
+    'mode.pan':        () => setInteractMode('pan'),
+    'mode.select':     () => setInteractMode('select'),
+    'view.toggle':     () => setViewMode(v => v === 'single' ? 'continuous' : 'single'),
+    'rotate.cw':       () => setRotation(r => (r + 90) % 360),
+    'rotate.ccw':      () => setRotation(r => (r - 90 + 360) % 360),
+    'bookmark.toggle': onToggleBookmark ? () => onToggleBookmark(page) : undefined,
   });
 
   // Touch handlers: pinch-to-zoom (2 fingers, any mode) + pan (1 finger, pan mode)
@@ -254,7 +257,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
       onPageChange(fileId, prev, numPages);
       return prev;
     });
-  }, [fileId, onPageChange]);
+  }, [numPages, fileId, onPageChange]);
 
   // The scale currently being rendered, regardless of mode
   const getEffectiveScale = useCallback((): number => {

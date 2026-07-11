@@ -109,7 +109,7 @@ export function useSession() {
 
     const id       = makeId();
     const pdfFiles = files.map(f => ({
-      id: makeId(), name: f.name, currentPage: 1, totalPages: 0,
+      id: makeId(), name: f.name, currentPage: 1, maxPage: 1, totalPages: 0,
     } as PdfFile));
 
     const urlMap   = makeUrlMap(files, pdfFiles);
@@ -143,7 +143,7 @@ export function useSession() {
       const files    = entries.map(e => e.file);
       const handles  = entries.map(e => e.handle);
       const pdfFiles = files.map(f => ({
-        id: makeId(), name: f.name, currentPage: 1, totalPages: 0,
+        id: makeId(), name: f.name, currentPage: 1, maxPage: 1, totalPages: 0,
       } as PdfFile));
 
       const urlMap   = makeUrlMap(files, pdfFiles);
@@ -219,7 +219,9 @@ export function useSession() {
   const updatePage = useCallback((fileId: string, page: number, totalPages: number) => {
     setSession(prev => {
       if (!prev) return prev;
-      const files   = prev.files.map(f => f.id === fileId ? { ...f, currentPage: page, totalPages } : f);
+      const files   = prev.files.map(f => f.id === fileId
+        ? { ...f, currentPage: page, maxPage: Math.max(f.maxPage ?? f.currentPage, page), totalPages }
+        : f);
       const updated = { ...prev, files, updatedAt: Date.now() };
       saveSession(updated);
       return updated;
