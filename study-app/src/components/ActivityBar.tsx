@@ -6,6 +6,7 @@ import { useNotes } from '../hooks/useNotes';
 import NotesPanel from './NotesPanel';
 import BookmarksPanel from './BookmarksPanel';
 import styles from './ActivityBar.module.css';
+import { ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 
 type Section = 'pages' | 'files' | 'notes' | 'bookmarks';
 
@@ -167,7 +168,8 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
               className={`${styles.tab} ${section === 'bookmarks' ? styles.tabActive : ''}`}
               onClick={() => setSection('bookmarks')}
             >
-              {bookmarks.length > 0 ? `★ ${bookmarks.length}` : '☆'}
+              <Bookmark size={12} fill={bookmarks.length > 0 ? 'currentColor' : 'none'} />
+              {bookmarks.length > 0 && <span>{bookmarks.length}</span>}
             </button>
           </div>
 
@@ -268,7 +270,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
         aria-label={isOpen ? 'Cerrar panel' : 'Abrir panel'}
         title={isOpen ? 'Cerrar panel (arrastrar para redimensionar)' : 'Abrir panel'}
       >
-        {isOpen ? '›' : '‹'}
+        {isOpen ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
     </div>
   );

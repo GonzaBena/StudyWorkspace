@@ -1,5 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Page } from 'react-pdf';
+import {
+  ChevronLeft, ChevronRight, RotateCcw, RotateCw, AlignJustify,
+  MousePointer2, Hand, ArrowLeftRight, ArrowUpDown, Minus, Plus,
+  Bookmark, CheckCheck, X,
+} from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import styles from './PdfViewer.module.css';
@@ -380,7 +385,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
       </div>
 
       <nav className={styles.nav}>
-        <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn}>← Anterior</button>
+        <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn}><ChevronLeft size={14} /> Anterior</button>
 
         {editingPage ? (
           <input
@@ -409,7 +414,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
                 className={`${styles.zoomBtn} ${bookmarks?.includes(page) ? styles.zoomActive : ''}`}
                 title={bookmarks?.includes(page) ? 'Quitar marca de página' : 'Marcar página'}
               >
-                {bookmarks?.includes(page) ? '★' : '☆'}
+                <Bookmark size={14} fill={bookmarks?.includes(page) ? 'currentColor' : 'none'} />
               </button>
             </div>
           )}
@@ -418,14 +423,14 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
 
           {/* Rotation & View Mode */}
           <div className={styles.toolGroup}>
-            <button onClick={() => setRotation(r => (r - 90 + 360) % 360)} className={styles.zoomBtn} title="Rotar izquierda">↺</button>
-            <button onClick={() => setRotation(r => (r + 90) % 360)} className={styles.zoomBtn} title="Rotar derecha">↻</button>
+            <button onClick={() => setRotation(r => (r - 90 + 360) % 360)} className={styles.zoomBtn} title="Rotar izquierda"><RotateCcw size={14} /></button>
+            <button onClick={() => setRotation(r => (r + 90) % 360)} className={styles.zoomBtn} title="Rotar derecha"><RotateCw size={14} /></button>
             <div className={styles.zoomDivider} />
             <button
               onClick={() => setViewMode(v => v === 'single' ? 'continuous' : 'single')}
               className={`${styles.zoomBtn} ${viewMode === 'continuous' ? styles.zoomActive : ''}`}
               title="Alternar vista continua"
-            >↕</button>
+            ><AlignJustify size={14} /></button>
           </div>
 
           <div className={styles.zoomDivider} />
@@ -437,40 +442,40 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
               className={`${styles.zoomBtn} ${interactMode === 'select' ? styles.zoomActive : ''}`}
               title="Modo selección (texto)"
               aria-label="Modo selección"
-            >↖ Sel</button>
+            ><MousePointer2 size={14} /></button>
             <button
               onClick={() => setInteractMode('pan')}
               className={`${styles.zoomBtn} ${interactMode === 'pan' ? styles.zoomActive : ''}`}
               title="Modo desplazamiento"
               aria-label="Modo desplazamiento"
-            >✋ Pan</button>
+            ><Hand size={14} /></button>
           </div>
 
           <div className={styles.zoomDivider} />
 
           {/* Zoom controls */}
           <div className={styles.toolGroup}>
-            <button onClick={handleZoomOut} className={styles.zoomBtn} title="Reducir (−)">−</button>
+            <button onClick={handleZoomOut} className={styles.zoomBtn} title="Reducir (−)"><Minus size={14} /></button>
             <span className={styles.zoomLabel}>{zoomLabel}</span>
-            <button onClick={handleZoomIn}  className={styles.zoomBtn} title="Ampliar (+)">+</button>
+            <button onClick={handleZoomIn}  className={styles.zoomBtn} title="Ampliar (+)"><Plus size={14} /></button>
             <div className={styles.zoomDivider} />
             <button
               onClick={() => setZoomMode('fit-width')}
               className={`${styles.zoomBtn} ${zoomMode === 'fit-width'  ? styles.zoomActive : ''}`}
               title="Ajustar al ancho"
-            >⊞ W</button>
+            ><ArrowLeftRight size={14} /></button>
             <button
               onClick={() => setZoomMode('fit-height')}
               className={`${styles.zoomBtn} ${zoomMode === 'fit-height' ? styles.zoomActive : ''}`}
               title="Ajustar al alto"
-            >⊟ H</button>
+            ><ArrowUpDown size={14} /></button>
           </div>
         </div>
 
         {isLast ? (
-          <button onClick={onComplete} className={`${styles.navBtn} ${styles.completeBtn}`}>✓ Completado →</button>
+          <button onClick={onComplete} className={`${styles.navBtn} ${styles.completeBtn}`}><CheckCheck size={14} /> Completado</button>
         ) : (
-          <button onClick={goNext} disabled={page >= numPages} className={styles.navBtn}>Siguiente →</button>
+          <button onClick={goNext} disabled={page >= numPages} className={styles.navBtn}>Siguiente <ChevronRight size={14} /></button>
         )}
       </nav>
     </div>

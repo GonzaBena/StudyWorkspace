@@ -88,6 +88,9 @@
   color: var(--primary-color, #007bff);
   cursor: pointer;
   font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .jumpBtn:hover {

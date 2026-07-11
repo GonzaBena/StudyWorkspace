@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import styles from './StatusBar.module.css';
 import { progressColor } from '../utils/colors';
 import PomodoroTimer from './PomodoroTimer';
@@ -73,7 +74,7 @@ export default function StatusBar({ docProgress, listProgress, currentFileName, 
         </div>
       </div>
       <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar sesión">
-        ✕ Cerrar
+        <X size={14} /> Cerrar
       </button>
     </header>
   );

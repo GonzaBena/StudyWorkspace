@@ -1,3 +1,5 @@
+import { Page } from 'react-pdf';
+import { Bookmark, X } from 'lucide-react';
 import styles from './BookmarksPanel.module.css';
 
 interface Props {
@@ -16,25 +18,33 @@ export default function BookmarksPanel({ currentPage, bookmarks, onToggle, onJum
         className={`${styles.toggleBtn} ${isBookmarked ? styles.toggleBtnActive : ''}`}
         onClick={() => onToggle(currentPage)}
       >
-        <span className={styles.star}>{isBookmarked ? '★' : '☆'}</span>
+        <Bookmark size={14} fill={isBookmarked ? 'currentColor' : 'none'} />
         {isBookmarked ? 'Quitar marca' : 'Marcar'} página {currentPage}
       </button>
 
-      <div className={styles.list}>
+      <div className={styles.grid}>
         {bookmarks.length === 0 ? (
           <p className={styles.empty}>No hay páginas marcadas.</p>
         ) : (
           bookmarks.map(page => (
             <div
               key={page}
-              className={`${styles.item} ${page === currentPage ? styles.itemActive : ''}`}
+              className={`${styles.card} ${page === currentPage ? styles.cardActive : ''}`}
             >
-              <button className={styles.jumpBtn} onClick={() => onJumpToPage(page)}>
-                <span className={styles.starSmall}>★</span> Página {page}
+              <button className={styles.thumbBtn} onClick={() => onJumpToPage(page)}>
+                <Page
+                  pageNumber={page}
+                  width={120}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                />
               </button>
-              <button className={styles.removeBtn} onClick={() => onToggle(page)} title="Quitar marca">
-                ✕
-              </button>
+              <div className={styles.cardFooter}>
+                <span className={styles.pageLabel}>Pág. {page}</span>
+                <button className={styles.removeBtn} onClick={() => onToggle(page)} title="Quitar marca">
+                  <X size={12} />
+                </button>
+              </div>
             </div>
           ))
         )}

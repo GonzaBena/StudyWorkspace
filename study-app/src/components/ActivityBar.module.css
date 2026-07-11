@@ -161,7 +161,7 @@
 }
 
 .thumbNum {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.65rem;
   color: var(--text-muted);
 }
@@ -228,7 +228,7 @@
 }
 
 .filePct {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.65rem;
   min-width: 28px;
   text-align: right;

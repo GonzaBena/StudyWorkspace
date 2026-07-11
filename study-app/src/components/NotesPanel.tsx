@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ArrowRight } from 'lucide-react';
 import styles from './NotesPanel.module.css';
 
 interface Props {
@@ -45,7 +46,7 @@ export default function NotesPanel({ currentPage, notes, onSaveNote, onJumpToPag
             <div key={page} className={styles.noteItem}>
               <div className={styles.noteHeader}>
                 <span className={styles.notePage}>Página {page}</span>
-                <button className={styles.jumpBtn} onClick={() => onJumpToPage(page)}>Ir →</button>
+                <button className={styles.jumpBtn} onClick={() => onJumpToPage(page)}>Ir <ArrowRight size={12} /></button>
               </div>
               <p className={styles.notePreview}>{notes[page]}</p>
             </div>
