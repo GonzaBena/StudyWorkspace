@@ -4,9 +4,10 @@ import type { Session, PdfFile } from '../types';
 import { progressColor } from '../utils/colors';
 import { useNotes } from '../hooks/useNotes';
 import NotesPanel from './NotesPanel';
+import BookmarksPanel from './BookmarksPanel';
 import styles from './ActivityBar.module.css';
 
-type Section = 'pages' | 'files' | 'notes';
+type Section = 'pages' | 'files' | 'notes' | 'bookmarks';
 
 interface Props {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface Props {
   onJumpToPage: (page: number) => void;
   onSwitchFile: (index: number) => void;
   onReorderFiles: (oldIndex: number, newIndex: number) => void;
+  bookmarks: number[];
+  onToggleBookmark: (page: number) => void;
 }
 
 // ── Lazy thumbnail ────────────────────────────────────────────────────────────
@@ -76,7 +79,7 @@ const MIN_WIDTH = 200;
 const MAX_WIDTH_VW = 0.4;
 const DRAG_THRESHOLD = 4;
 
-export default function ActivityBar({ isOpen, onToggle, session, currentFile, numPages, onJumpToPage, onSwitchFile, onReorderFiles }: Props) {
+export default function ActivityBar({ isOpen, onToggle, session, currentFile, numPages, onJumpToPage, onSwitchFile, onReorderFiles, bookmarks, onToggleBookmark }: Props) {
   const [section, setSection] = useState<Section>('pages');
   const [visible, setVisible] = useState(isOpen);
   const [panelWidth, setPanelWidth] = useState(MIN_WIDTH);
@@ -160,6 +163,12 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
             >
               Notas
             </button>
+            <button
+              className={`${styles.tab} ${section === 'bookmarks' ? styles.tabActive : ''}`}
+              onClick={() => setSection('bookmarks')}
+            >
+              {bookmarks.length > 0 ? `★ ${bookmarks.length}` : '☆'}
+            </button>
           </div>
 
           {/* Pages section */}
@@ -226,6 +235,22 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
                   currentPage={currentPage}
                   notes={notes}
                   onSaveNote={saveNote}
+                  onJumpToPage={handleJump}
+                />
+              ) : (
+                <p className={styles.empty}>Sin archivo abierto.</p>
+              )}
+            </div>
+          )}
+
+          {/* Bookmarks section */}
+          {section === 'bookmarks' && (
+            <div className={styles.content}>
+              {currentFile ? (
+                <BookmarksPanel
+                  currentPage={currentPage}
+                  bookmarks={bookmarks}
+                  onToggle={onToggleBookmark}
                   onJumpToPage={handleJump}
                 />
               ) : (

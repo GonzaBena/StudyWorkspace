@@ -42,7 +42,7 @@
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 10px 16px;
   background: var(--bar-bg);
   border-top: 1px solid var(--border);
@@ -52,7 +52,7 @@
 }
 
 .pageNum {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.82rem;
   color: var(--text-muted);
   min-width: 72px;
@@ -70,7 +70,7 @@
 }
 
 .pageInput {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.82rem;
   color: var(--text);
   background: var(--card-bg);
@@ -130,7 +130,7 @@
 .zoomLabel {
   min-width: 46px;
   text-align: center;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 0.72rem;
   color: var(--text);
   padding: 0 2px;

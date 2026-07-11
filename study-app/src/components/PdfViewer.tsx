@@ -28,9 +28,11 @@ interface Props {
   jumpRequest?: number | null;
   onJumpApplied?: () => void;
   docInvert?: boolean;
+  bookmarks?: number[];
+  onToggleBookmark?: (page: number) => void;
 }
 
-export default function PdfViewer({ fileId, initialPage, numPages, error, loading, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied, docInvert }: Props) {
+export default function PdfViewer({ fileId, initialPage, numPages, error, loading, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied, docInvert, bookmarks, onToggleBookmark }: Props) {
   const [page, setPage] = useState(initialPage);
   const [containerWidth, setContainerWidth]   = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -92,6 +94,14 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
 
   // Keep scrollPageRef in sync with page state (set by buttons/jumps)
   useEffect(() => { scrollPageRef.current = page; }, [page]);
+
+  // Scroll to top when changing pages in single-page mode
+  useEffect(() => {
+    if (viewMode === 'single' && containerRef.current) {
+      containerRef.current.scrollTop = 0;
+      containerRef.current.scrollLeft = 0;
+    }
+  }, [page, viewMode]);
 
   // Continuous scroll: IntersectionObserver to highlight the most visible page
   useEffect(() => {
@@ -391,6 +401,21 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
         )}
 
         <div className={styles.toolbar}>
+          {/* Bookmark toggle */}
+          {onToggleBookmark && (
+            <div className={styles.toolGroup}>
+              <button
+                onClick={() => onToggleBookmark(page)}
+                className={`${styles.zoomBtn} ${bookmarks?.includes(page) ? styles.zoomActive : ''}`}
+                title={bookmarks?.includes(page) ? 'Quitar marca de página' : 'Marcar página'}
+              >
+                {bookmarks?.includes(page) ? '★' : '☆'}
+              </button>
+            </div>
+          )}
+
+          <div className={styles.zoomDivider} />
+
           {/* Rotation & View Mode */}
           <div className={styles.toolGroup}>
             <button onClick={() => setRotation(r => (r - 90 + 360) % 360)} className={styles.zoomBtn} title="Rotar izquierda">↺</button>

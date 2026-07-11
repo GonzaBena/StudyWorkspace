@@ -4,6 +4,7 @@ import { pdfjs } from 'react-pdf';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useSession } from './hooks/useSession';
+import { useBookmarks } from './hooks/useBookmarks';
 import { getSessions } from './utils/session';
 import HomeCard from './components/HomeCard';
 import RecentSessions from './components/RecentSessions';
@@ -37,6 +38,7 @@ export default function App() {
   const [activityOpen, setActivityOpen]   = useState(true);
   const [jumpRequest,  setJumpRequest]    = useState<number | null>(null);
   const [docInvert,    setDocInvert]      = useState(false);
+  const { bookmarks, toggleBookmark } = useBookmarks(currentFile?.id);
   const homeRef   = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
 
@@ -125,6 +127,8 @@ export default function App() {
                     jumpRequest={jumpRequest}
                     onJumpApplied={() => setJumpRequest(null)}
                     docInvert={docInvert}
+                    bookmarks={bookmarks}
+                    onToggleBookmark={toggleBookmark}
                   />
                   <ActivityBar
                     isOpen={activityOpen}
@@ -135,6 +139,8 @@ export default function App() {
                     onJumpToPage={setJumpRequest}
                     onSwitchFile={switchToFile}
                     onReorderFiles={reorderFiles}
+                    bookmarks={bookmarks}
+                    onToggleBookmark={toggleBookmark}
                   />
                 </>
               )}
