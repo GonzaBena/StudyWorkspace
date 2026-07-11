@@ -1,30 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Page } from 'react-pdf';
 import type { Session, PdfFile } from '../types';
 import { progressColor } from '../utils/colors';
+import { useNotes } from '../hooks/useNotes';
+import NotesPanel from './NotesPanel';
 import styles from './ActivityBar.module.css';
 
-type Section = 'pages' | 'files';
+type Section = 'pages' | 'files' | 'notes';
 
 interface Props {
   isOpen: boolean;
   onToggle: () => void;
   session: Session;
   currentFile: PdfFile | null;
+  numPages: number;
   onJumpToPage: (page: number) => void;
   onSwitchFile: (index: number) => void;
+  onReorderFiles: (oldIndex: number, newIndex: number) => void;
 }
 
 // ── Lazy thumbnail ────────────────────────────────────────────────────────────
 
 interface ThumbProps {
-  url: string;
   pageNum: number;
   isActive: boolean;
   onClick: () => void;
 }
 
-function Thumbnail({ url, pageNum, isActive, onClick }: ThumbProps) {
+function Thumbnail({ pageNum, isActive, onClick }: ThumbProps) {
   const ref     = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
 
@@ -53,14 +56,12 @@ function Thumbnail({ url, pageNum, isActive, onClick }: ThumbProps) {
       title={`Página ${pageNum}`}
     >
       {show ? (
-        <Document file={url} loading={null} error={null}>
-          <Page
-            pageNumber={pageNum}
-            width={160}
-            renderAnnotationLayer={false}
-            renderTextLayer={false}
-          />
-        </Document>
+        <Page
+          pageNumber={pageNum}
+          width={160}
+          renderAnnotationLayer={false}
+          renderTextLayer={false}
+        />
       ) : (
         <div className={styles.thumbPlaceholder} />
       )}
@@ -73,7 +74,7 @@ function Thumbnail({ url, pageNum, isActive, onClick }: ThumbProps) {
 
 const ANIM_MS = 220;
 
-export default function ActivityBar({ isOpen, onToggle, session, currentFile, onJumpToPage, onSwitchFile }: Props) {
+export default function ActivityBar({ isOpen, onToggle, session, currentFile, numPages, onJumpToPage, onSwitchFile, onReorderFiles }: Props) {
   const [section, setSection] = useState<Section>('pages');
   const [visible, setVisible] = useState(isOpen);
 
@@ -88,8 +89,10 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
 
   const closing = visible && !isOpen;
 
-  const numPages   = currentFile?.totalPages ?? 0;
+  // Usa numPages prop en lugar del que viene en currentFile si está desactualizado
   const currentPage = currentFile?.currentPage ?? 1;
+
+  const { notes, saveNote } = useNotes(currentFile?.id);
 
   const handleJump = useCallback((p: number) => onJumpToPage(p), [onJumpToPage]);
 
@@ -111,12 +114,18 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
             >
               Archivos
             </button>
+            <button
+              className={`${styles.tab} ${section === 'notes' ? styles.tabActive : ''}`}
+              onClick={() => setSection('notes')}
+            >
+              Notas
+            </button>
           </div>
 
           {/* Pages section */}
           {section === 'pages' && (
             <div className={styles.content}>
-              {!currentFile?.url ? (
+              {!currentFile ? (
                 <p className={styles.empty}>Sin archivo abierto.</p>
               ) : numPages === 0 ? (
                 <p className={styles.empty}>Cargando páginas…</p>
@@ -124,7 +133,6 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
                 Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
                   <Thumbnail
                     key={p}
-                    url={currentFile.url!}
                     pageNum={p}
                     isActive={p === currentPage}
                     onClick={() => handleJump(p)}
@@ -145,6 +153,14 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
                     key={f.id}
                     className={`${styles.fileItem} ${isActive ? styles.fileActive : ''}`}
                     onClick={() => onSwitchFile(i)}
+                    draggable
+                    onDragStart={e => e.dataTransfer.setData('text/plain', i.toString())}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      const oldIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                      if (!isNaN(oldIndex) && oldIndex !== i) onReorderFiles(oldIndex, i);
+                    }}
                   >
                     <div className={styles.fileName} title={f.name}>{f.name}</div>
                     <div className={styles.fileProgress}>
@@ -161,17 +177,33 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, on
               })}
             </div>
           )}
+
+          {/* Notes section */}
+          {section === 'notes' && (
+            <div className={styles.content}>
+              {currentFile ? (
+                <NotesPanel
+                  currentPage={currentPage}
+                  notes={notes}
+                  onSaveNote={saveNote}
+                  onJumpToPage={handleJump}
+                />
+              ) : (
+                <p className={styles.empty}>Sin archivo abierto.</p>
+              )}
+            </div>
+          )}
       </aside>
       )}
 
       {/* Collapse / expand button — always visible on the far right */}
       <button
-        className={styles.toggleBtn}
+        className={`${styles.toggleBtn} ${!isOpen ? styles.toggleBtnClosed : ''}`}
         onClick={onToggle}
         aria-label={isOpen ? 'Cerrar panel' : 'Abrir panel'}
         title={isOpen ? 'Cerrar panel' : 'Abrir panel'}
       >
-        {isOpen ? '<' : '>'}
+        {isOpen ? '›' : '‹'}
       </button>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Page } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import styles from './PdfViewer.module.css';
@@ -16,22 +16,26 @@ export interface ViewerConfig {
 const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
 interface Props {
-  url: string;
   fileId: string;
   initialPage: number;
+  numPages: number;
+  error: Error | null;
+  loading: boolean;
   onPageChange: (fileId: string, page: number, total: number) => void;
   onComplete: () => void;
   config: ViewerConfig;
   onConfigChange: (c: ViewerConfig) => void;
   jumpRequest?: number | null;
   onJumpApplied?: () => void;
+  docInvert?: boolean;
 }
 
-export default function PdfViewer({ url, fileId, initialPage, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied }: Props) {
-  const [numPages, setNumPages] = useState(0);
+export default function PdfViewer({ fileId, initialPage, numPages, error, loading, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied, docInvert }: Props) {
   const [page, setPage] = useState(initialPage);
   const [containerWidth, setContainerWidth]   = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [rotation, setRotation] = useState<number>(0);
+  const [viewMode, setViewMode] = useState<'single' | 'continuous'>('single');
   const [zoomMode,     setZoomMode]     = useState<ZoomMode>(config.zoomMode);
   const [customScale,  setCustomScale]  = useState(config.customScale);
   const [interactMode, setInteractMode] = useState<InteractMode>(config.interactMode);
@@ -46,6 +50,11 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
   const pinchRef        = useRef<{ dist: number; scale: number } | null>(null);
   const currentScaleRef = useRef(1);
   const configSynced    = useRef(false); // skip propagating on first render
+  // Continuous scroll tracking
+  const observerRef    = useRef<IntersectionObserver | null>(null);
+  const pageVisibleRef = useRef<Map<number, number>>(new Map()); // pageNum → visible px
+  const pageElemsRef   = useRef<Map<number, Element>>(new Map());
+  const scrollPageRef  = useRef(1); // current page per scroll, avoids stale closure in observer
 
   useEffect(() => {
     setPage(initialPage);
@@ -56,8 +65,17 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
   // External page jump request (from ActivityBar thumbnails)
   useEffect(() => {
     if (jumpRequest == null || jumpRequest < 1 || numPages === 0 || jumpRequest > numPages) return;
-    setPage(jumpRequest);
-    onPageChange(fileId, jumpRequest, numPages);
+    if (viewMode === 'continuous') {
+      const el = pageElemsRef.current.get(jumpRequest);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Update state immediately for responsive feedback; observer will stay in sync during scroll
+      scrollPageRef.current = jumpRequest;
+      setPage(jumpRequest);
+      onPageChange(fileId, jumpRequest, numPages);
+    } else {
+      setPage(jumpRequest);
+      onPageChange(fileId, jumpRequest, numPages);
+    }
     onJumpApplied?.();
   }, [jumpRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -71,6 +89,45 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
   useEffect(() => {
     if (editingPage) pageInputRef.current?.select();
   }, [editingPage]);
+
+  // Keep scrollPageRef in sync with page state (set by buttons/jumps)
+  useEffect(() => { scrollPageRef.current = page; }, [page]);
+
+  // Continuous scroll: IntersectionObserver to highlight the most visible page
+  useEffect(() => {
+    if (viewMode !== 'continuous' || !containerRef.current || numPages === 0) {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+      pageVisibleRef.current.clear();
+      return;
+    }
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          const pn = Number((entry.target as HTMLElement).dataset.pageNum);
+          if (pn) pageVisibleRef.current.set(pn, entry.intersectionRect.height);
+        });
+
+        let bestPx = -1, bestPage = scrollPageRef.current;
+        pageVisibleRef.current.forEach((px, p) => {
+          if (px > bestPx) { bestPx = px; bestPage = p; }
+        });
+
+        if (bestPage !== scrollPageRef.current) {
+          scrollPageRef.current = bestPage;
+          setPage(bestPage);
+          onPageChange(fileId, bestPage, numPages);
+        }
+      },
+      { root: containerRef.current, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+    );
+
+    observerRef.current = obs;
+    pageElemsRef.current.forEach(el => obs.observe(el));
+
+    return () => { obs.disconnect(); observerRef.current = null; };
+  }, [viewMode, numPages, fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const ro = new ResizeObserver(entries => {
@@ -150,10 +207,11 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
     };
   }, [interactMode]);
 
-  const onLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
-    setNumPages(n);
-    onPageChange(fileId, page, n);
-  }, [fileId, page, onPageChange]);
+  useEffect(() => {
+    if (numPages > 0) {
+      onPageChange(fileId, page, numPages);
+    }
+  }, [fileId, numPages]);
 
   const onPageLoadSuccess = useCallback((pageProxy: { getViewport: (o: { scale: number }) => { width: number; height: number } }) => {
     const vp = pageProxy.getViewport({ scale: 1 });
@@ -263,19 +321,47 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
       <div
         ref={containerRef}
         className={containerClass}
+        style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)' } : undefined}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
       >
-        <Document
-          file={url}
-          onLoadSuccess={onLoadSuccess}
-          loading={<div className={styles.loading}>Cargando PDF…</div>}
-          error={<div className={styles.error}>Error al cargar el PDF.</div>}
-        >
-          {ready && <Page pageNumber={page} onLoadSuccess={onPageLoadSuccess} {...pageProps} />}
-        </Document>
+        {loading && <div className={styles.loading}>Cargando PDF…</div>}
+        {error && <div className={styles.error}>Error al cargar el PDF. {error.message}</div>}
+        {!loading && !error && ready && numPages > 0 && (
+          viewMode === 'single' ? (
+            <Page pageNumber={page} onLoadSuccess={onPageLoadSuccess} rotate={rotation} {...pageProps} />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', margin: 'auto' }}>
+              {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
+                <div
+                  key={p}
+                  data-page-num={String(p)}
+                  ref={el => {
+                    if (el) {
+                      pageElemsRef.current.set(p, el);
+                      observerRef.current?.observe(el);
+                    } else {
+                      const old = pageElemsRef.current.get(p);
+                      if (old) observerRef.current?.unobserve(old);
+                      pageElemsRef.current.delete(p);
+                    }
+                  }}
+                >
+                  <Page
+                    pageNumber={p}
+                    onLoadSuccess={p === 1 ? onPageLoadSuccess : undefined}
+                    rotate={rotation}
+                    {...pageProps}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                  />
+                </div>
+              ))}
+            </div>
+          )
+        )}
       </div>
 
       <nav className={styles.nav}>
@@ -300,6 +386,20 @@ export default function PdfViewer({ url, fileId, initialPage, onPageChange, onCo
         )}
 
         <div className={styles.toolbar}>
+          {/* Rotation & View Mode */}
+          <div className={styles.toolGroup}>
+            <button onClick={() => setRotation(r => (r - 90 + 360) % 360)} className={styles.zoomBtn} title="Rotar izquierda">↺</button>
+            <button onClick={() => setRotation(r => (r + 90) % 360)} className={styles.zoomBtn} title="Rotar derecha">↻</button>
+            <div className={styles.zoomDivider} />
+            <button
+              onClick={() => setViewMode(v => v === 'single' ? 'continuous' : 'single')}
+              className={`${styles.zoomBtn} ${viewMode === 'continuous' ? styles.zoomActive : ''}`}
+              title="Alternar vista continua"
+            >↕</button>
+          </div>
+
+          <div className={styles.zoomDivider} />
+
           {/* Mode toggle */}
           <div className={styles.toolGroup}>
             <button

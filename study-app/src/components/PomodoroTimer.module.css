@@ -1,0 +1,56 @@
+.pomodoro {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-hover);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-family: monospace;
+}
+
+.mode {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.mode:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.timer {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  min-width: 44px;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.btn:hover {
+  background: var(--bg-card);
+}

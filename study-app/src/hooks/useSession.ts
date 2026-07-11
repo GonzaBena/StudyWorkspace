@@ -265,6 +265,37 @@ export function useSession() {
     });
   }, []);
 
+  const reorderFiles = useCallback((oldIndex: number, newIndex: number) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      const files = [...prev.files];
+      const [moved] = files.splice(oldIndex, 1);
+      files.splice(newIndex, 0, moved);
+      
+      let newCurrentIndex = prev.currentFileIndex;
+      if (oldIndex === prev.currentFileIndex) {
+        newCurrentIndex = newIndex;
+      } else if (oldIndex < prev.currentFileIndex && newIndex >= prev.currentFileIndex) {
+        newCurrentIndex--;
+      } else if (oldIndex > prev.currentFileIndex && newIndex <= prev.currentFileIndex) {
+        newCurrentIndex++;
+      }
+
+      const updated = { ...prev, files, currentFileIndex: newCurrentIndex, updatedAt: Date.now() };
+      saveSession(updated);
+      return updated;
+    });
+  }, []);
+
+  const renameSession = useCallback((newName: string) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, name: newName, updatedAt: Date.now() };
+      saveSession(updated);
+      return updated;
+    });
+  }, []);
+
   // ── derived ────────────────────────────────────────────────────────────────
 
   const currentFile = session ? session.files[session.currentFileIndex] ?? null : null;
@@ -288,6 +319,8 @@ export function useSession() {
     updatePage,
     completeFile,
     switchToFile,
+    reorderFiles,
+    renameSession,
     closeSession,
     deleteSession,
   };

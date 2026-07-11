@@ -1,7 +1,8 @@
 const DB_NAME = 'study-progress';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const HANDLES_STORE = 'file-handles';
 const DATA_STORE    = 'file-data';
+const NOTES_STORE   = 'file-notes';
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -10,6 +11,7 @@ function openDB(): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains(HANDLES_STORE)) db.createObjectStore(HANDLES_STORE);
       if (!db.objectStoreNames.contains(DATA_STORE))    db.createObjectStore(DATA_STORE);
+      if (!db.objectStoreNames.contains(NOTES_STORE))   db.createObjectStore(NOTES_STORE);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror  = () => reject(req.error);
@@ -53,3 +55,9 @@ export type FileDataMap = Record<string, ArrayBuffer>;
 export const saveFileData   = (id: string, v: FileDataMap) => put(DATA_STORE, id, v);
 export const loadFileData   = (id: string)                 => get<FileDataMap>(DATA_STORE, id);
 export const removeFileData = (id: string)                 => del(DATA_STORE, id);
+
+// Notes per file
+export type NotesMap = Record<number, string>;
+export const saveNotes = (fileId: string, v: NotesMap) => put(NOTES_STORE, fileId, v);
+export const loadNotes = (fileId: string) => get<NotesMap>(NOTES_STORE, fileId);
+export const removeNotes = (fileId: string) => del(NOTES_STORE, fileId);

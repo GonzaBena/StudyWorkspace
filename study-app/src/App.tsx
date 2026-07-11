@@ -11,6 +11,9 @@ import StatusBar from './components/StatusBar';
 import PdfViewer, { type ViewerConfig } from './components/PdfViewer';
 import ActivityBar from './components/ActivityBar';
 import DarkModeToggle from './components/DarkModeToggle';
+import DocInvertToggle from './components/DocInvertToggle';
+import PdfSessionReader from './components/PdfSessionReader';
+import StorageWarning from './components/StorageWarning';
 import type { Session } from './types';
 import './index.css';
 import styles from './App.module.css';
@@ -27,12 +30,13 @@ const DEFAULT_VIEWER_CONFIG: ViewerConfig = {
 
 export default function App() {
   const { isDark, toggle } = useDarkMode();
-  const { session, currentFile, allDone, fileListProgress, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, closeSession, deleteSession } = useSession();
+  const { session, currentFile, allDone, fileListProgress, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, reorderFiles, renameSession, closeSession, deleteSession } = useSession();
   const [view, setView] = useState<View>('home');
   const [savedSessions, setSavedSessions] = useState<Session[]>([]);
   const [viewerConfig, setViewerConfig]   = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
   const [activityOpen, setActivityOpen]   = useState(true);
   const [jumpRequest,  setJumpRequest]    = useState<number | null>(null);
+  const [docInvert,    setDocInvert]      = useState(false);
   const homeRef   = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +89,8 @@ export default function App() {
           currentFileName={currentFile.name}
           fileIndex={session.currentFileIndex}
           totalFiles={session.files.length}
+          sessionName={session.name}
+          onRenameSession={renameSession}
           onClose={handleClose}
         />
         <div className={styles.readerBody}>
@@ -96,28 +102,46 @@ export default function App() {
               <button className={styles.doneBtn} onClick={handleClose}>Volver al inicio</button>
             </div>
           ) : (
-            <PdfViewer
+            <PdfSessionReader
               key={currentFile.id}
               url={currentFile.url!}
-              fileId={currentFile.id}
-              initialPage={currentFile.currentPage}
-              onPageChange={updatePage}
-              onComplete={completeFile}
-              config={viewerConfig}
-              onConfigChange={setViewerConfig}
-              jumpRequest={jumpRequest}
-              onJumpApplied={() => setJumpRequest(null)}
-            />
+              onPasswordRequest={(cb) => {
+                const pass = prompt('Este PDF requiere contraseña. Introduce la contraseña:');
+                if (pass !== null) cb(pass);
+              }}
+            >
+              {(numPages, error, loading) => (
+                <>
+                  <PdfViewer
+                    fileId={currentFile.id}
+                    initialPage={currentFile.currentPage}
+                    numPages={numPages}
+                    error={error}
+                    loading={loading}
+                    onPageChange={updatePage}
+                    onComplete={completeFile}
+                    config={viewerConfig}
+                    onConfigChange={setViewerConfig}
+                    jumpRequest={jumpRequest}
+                    onJumpApplied={() => setJumpRequest(null)}
+                    docInvert={docInvert}
+                  />
+                  <ActivityBar
+                    isOpen={activityOpen}
+                    onToggle={() => setActivityOpen(o => !o)}
+                    session={session}
+                    currentFile={currentFile}
+                    numPages={numPages}
+                    onJumpToPage={setJumpRequest}
+                    onSwitchFile={switchToFile}
+                    onReorderFiles={reorderFiles}
+                  />
+                </>
+              )}
+            </PdfSessionReader>
           )}
-          <ActivityBar
-            isOpen={activityOpen}
-            onToggle={() => setActivityOpen(o => !o)}
-            session={session}
-            currentFile={currentFile}
-            onJumpToPage={setJumpRequest}
-            onSwitchFile={switchToFile}
-          />
         </div>
+        <DocInvertToggle inverted={docInvert} onToggle={() => setDocInvert(v => !v)} />
         <DarkModeToggle isDark={isDark} onToggle={toggle} />
       </div>
     );
@@ -129,6 +153,7 @@ export default function App() {
         <h1 className={styles.logo}>StudyProgress</h1>
       </header>
       <main className={styles.main}>
+        <StorageWarning />
         <HomeCard onFiles={handleFilesOpen} onFolder={openFolder} />
         <RecentSessions
           sessions={savedSessions}
