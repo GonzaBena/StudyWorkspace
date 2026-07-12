@@ -6,6 +6,8 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { useSession } from './hooks/useSession';
 import { useBookmarks } from './hooks/useBookmarks';
 import { getSessions } from './utils/session';
+import { loadNotes } from './utils/db';
+import { exportSessionToPdf } from './utils/pdfExport';
 import HomeCard from './components/HomeCard';
 import RecentSessions from './components/RecentSessions';
 import StatusBar from './components/StatusBar';
@@ -30,7 +32,7 @@ const DEFAULT_VIEWER_CONFIG: ViewerConfig = {
 
 export default function App() {
   const { isDark, toggle } = useDarkMode();
-  const { session, currentFile, allDone, fileListProgress, resuming, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, reorderFiles, renameSession, closeSession, deleteSession } = useSession();
+  const { session, currentFile, allDone, fileListProgress, resuming, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, reorderFiles, renameSession, updateStats, closeSession, deleteSession } = useSession();
   const [view, setView] = useState<View>('home');
   const [savedSessions, setSavedSessions] = useState<Session[]>([]);
   const [viewerConfig, setViewerConfig]   = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
@@ -42,6 +44,32 @@ export default function App() {
   const { bookmarks, toggleBookmark } = useBookmarks(currentFile?.id);
   const homeRef   = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
+
+  // Tick every second to track active file study time
+  useEffect(() => {
+    if (view !== 'reader' || !session || !currentFile || allDone) return;
+
+    const interval = setInterval(() => {
+      updateStats({ type: 'tick_file', fileId: currentFile.id });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [view, session?.id, currentFile?.id, allDone, updateStats]);
+
+  const handleExportPdf = useCallback(async () => {
+    if (!session) return;
+    try {
+      const notesMapRecord: Record<string, any> = {};
+      for (const file of session.files) {
+        const fileNotes = await loadNotes(file.id);
+        notesMapRecord[file.id] = fileNotes || {};
+      }
+      exportSessionToPdf(session, notesMapRecord);
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+      alert('Hubo un error al exportar la sesión a PDF.');
+    }
+  }, [session]);
 
   useEffect(() => {
     setSavedSessions(getSessions());
@@ -97,6 +125,10 @@ export default function App() {
           sessionName={session.name}
           onRenameSession={renameSession}
           onClose={handleClose}
+          onExportPdf={handleExportPdf}
+          onTickWork={() => updateStats({ type: 'tick_work' })}
+          onTickBreak={() => updateStats({ type: 'tick_break' })}
+          onPomodoroComplete={() => updateStats({ type: 'complete_pomodoro' })}
         />
         <div className={styles.readerBody}>
           {allDone ? (

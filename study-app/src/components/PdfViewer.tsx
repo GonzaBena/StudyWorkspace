@@ -146,36 +146,48 @@ export default function PdfViewer({
       return;
     }
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          const pn = Number((entry.target as HTMLElement).dataset.pageNum);
-          if (pn) pageVisibleRef.current.set(pn, entry.intersectionRect.height);
-        });
-
-        let bestPx = -1, bestPage = scrollPageRef.current;
-        pageVisibleRef.current.forEach((px, p) => {
-          if (px > bestPx) { bestPx = px; bestPage = p; }
-        });
-
-        if (bestPage !== scrollPageRef.current) {
-          scrollPageRef.current = bestPage;
-          setPage(bestPage);
-          onPageChange(fileId, bestPage, numPages);
-        }
-      },
-      { root: containerRef.current, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
-    );
-
-    observerRef.current = obs;
-    pageElemsRef.current.forEach(el => obs.observe(el));
-
     // Scroll to current page immediately so the observer fires at the right position,
     // not at position 0 (which would incorrectly report page 1 as most visible).
     const targetEl = pageElemsRef.current.get(scrollPageRef.current);
     if (targetEl) targetEl.scrollIntoView({ behavior: 'instant', block: 'start' });
 
-    return () => { obs.disconnect(); observerRef.current = null; };
+    let obs: IntersectionObserver | null = null;
+
+    // Delay observer attachment slightly to allow the instant scroll layout to settle.
+    // Otherwise, the observer triggers initial callbacks with scroll position at 0 (page 1).
+    const timer = setTimeout(() => {
+      if (viewMode !== 'continuous' || !containerRef.current) return;
+
+      obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            const pn = Number((entry.target as HTMLElement).dataset.pageNum);
+            if (pn) pageVisibleRef.current.set(pn, entry.intersectionRect.height);
+          });
+
+          let bestPx = -1, bestPage = scrollPageRef.current;
+          pageVisibleRef.current.forEach((px, p) => {
+            if (px > bestPx) { bestPx = px; bestPage = p; }
+          });
+
+          if (bestPage !== scrollPageRef.current) {
+            scrollPageRef.current = bestPage;
+            setPage(bestPage);
+            onPageChange(fileId, bestPage, numPages);
+          }
+        },
+        { root: containerRef.current, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+      );
+
+      observerRef.current = obs;
+      pageElemsRef.current.forEach(el => obs?.observe(el));
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (obs) obs.disconnect();
+      observerRef.current = null;
+    };
   }, [viewMode, numPages, fileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -458,7 +470,10 @@ export default function PdfViewer({
                       pageElemsRef.current.delete(p);
                     }
                   }}
-                  style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)', borderRadius: '4px', overflow: 'hidden' } : undefined}
+                  style={{
+                    ...(docInvert ? { filter: 'invert(1) hue-rotate(180deg)', borderRadius: '4px', overflow: 'hidden' } : {}),
+                    minHeight: naturalPageSize ? Math.round(naturalPageSize.height * getEffectiveScale()) : undefined,
+                  }}
                 >
                   <Page
                     pageNumber={p}
@@ -504,6 +519,17 @@ export default function PdfViewer({
             {page} / {numPages || '…'}
           </button>
         )}
+
+        <button
+          onClick={() => setScrollPageTurn(v => !v)}
+          className={`${styles.navBtn} ${scrollPageTurn ? styles.scrollActive : ''}`}
+          tabIndex={-1}
+          onMouseDown={e => e.preventDefault()}
+          title={scrollPageTurn ? "Desactivar cambio de página con scroll" : "Activar cambio de página con scroll"}
+        >
+          <ChevronsUpDown size={14} />
+          <span className={styles.navBtnLabel}>Auto-Scroll</span>
+        </button>
 
         <div className={styles.toolbar}>
           {/* Bookmark toggle */}
@@ -581,14 +607,6 @@ export default function PdfViewer({
               onMouseDown={e => e.preventDefault()}
               title="Ajustar al alto"
             ><ArrowUpDown size={14} /></button>
-            <div className={styles.zoomDivider} />
-            <button
-              onClick={() => setScrollPageTurn(v => !v)}
-              className={`${styles.zoomBtn} ${scrollPageTurn ? styles.zoomActive : ''}`}
-              tabIndex={-1}
-              onMouseDown={e => e.preventDefault()}
-              title="Cambiar página al llegar al borde"
-            ><ChevronsUpDown size={14} /></button>
           </div>
         </div>
 

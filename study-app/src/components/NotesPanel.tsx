@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ArrowRight, Quote, X, Trash2, Pencil } from 'lucide-react';
 import type { NoteItem, NotesMap } from '../utils/db';
 import NoteModal from './NoteModal';
+import { parseMarkdown } from '../utils/markdown';
 import styles from './NotesPanel.module.css';
 
 interface Props {
@@ -18,17 +19,22 @@ interface Props {
 export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote, onEditNote, onJumpToPage, lastSelection, onClearSelection }: Props) {
   const [text, setText] = useState('');
   const [editingNote, setEditingNote] = useState<(NoteItem & { page: number }) | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleAdd = () => {
     if (!text.trim()) return;
     onAddNote(currentPage, text, lastSelection || undefined);
     setText('');
+    setIsFocused(false);
     onClearSelection?.();
   };
 
   const allNotes = Object.entries(notes)
     .flatMap(([p, arr]) => arr.map(n => ({ ...n, page: Number(p) })))
     .sort((a, b) => a.page - b.page || a.createdAt - b.createdAt);
+
+  const showPreview = !isFocused && text.trim().length > 0;
 
   return (
     <div className={styles.panel}>
@@ -53,13 +59,32 @@ export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote
           </div>
         )}
 
-        <textarea
-          className={styles.textarea}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Escribe tu nota aquí..."
-          onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAdd(); }}
-        />
+        {showPreview ? (
+          <div
+            className={styles.previewContainer}
+            onClick={() => {
+              setIsFocused(true);
+              setTimeout(() => textareaRef.current?.focus(), 0);
+            }}
+            dangerouslySetInnerHTML={{ __html: parseMarkdown(text) }}
+            title="Haz clic para seguir editando"
+          />
+        ) : (
+          <textarea
+            ref={textareaRef}
+            className={styles.textarea}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="Escribe tu nota aquí (soporta Markdown)..."
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => {
+              setTimeout(() => {
+                setIsFocused(false);
+              }, 150);
+            }}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAdd(); }}
+          />
+        )}
         <button className={styles.saveBtn} onClick={handleAdd} disabled={!text.trim()}>
           Agregar
         </button>
@@ -100,7 +125,10 @@ export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote
                   <span>{note.selectedText}</span>
                 </div>
               )}
-              <p className={styles.notePreview}>{note.text}</p>
+              <div 
+                className={styles.notePreview} 
+                dangerouslySetInnerHTML={{ __html: parseMarkdown(note.text) }} 
+              />
             </div>
           ))
         )}

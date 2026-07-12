@@ -137,3 +137,75 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.previewContainer {
+  min-height: 120px;
+  max-height: 250px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  overflow-y: auto;
+  outline: none;
+  line-height: 1.6;
+  cursor: text;
+}
+
+.previewContainer h1, .previewContainer h2, .previewContainer h3 {
+  margin: 8px 0 4px 0;
+  font-weight: 600;
+  color: var(--text);
+}
+.previewContainer h1 { font-size: 1.15rem; }
+.previewContainer h2 { font-size: 1.05rem; }
+.previewContainer h3 { font-size: 0.95rem; }
+
+.previewContainer p {
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+}
+
+.previewContainer blockquote {
+  margin: 6px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.previewContainer ul {
+  margin: 4px 0 6px 16px;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.previewContainer li {
+  margin-bottom: 2px;
+}
+
+.previewContainer code {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.previewContainer pre {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  padding: 6px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+}
+
+.previewContainer pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.75rem;
+}

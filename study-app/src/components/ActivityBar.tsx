@@ -110,6 +110,13 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
 
   const handleJump = useCallback((p: number) => onJumpToPage(p), [onJumpToPage]);
 
+  const scrollToActiveThumbnail = useCallback(() => {
+    const activeEl = panelElRef.current?.querySelector(`.${styles.thumbActive}`);
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, []);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragRef.current = { startX: e.clientX, startWidth: panelWidthRef.current, dragging: false };
@@ -180,22 +187,31 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
 
           {/* Pages section */}
           {section === 'pages' && (
-            <div className={`${styles.content} ${styles.contentPages}`}>
-              {!currentFile ? (
-                <p className={styles.empty}>Sin archivo abierto.</p>
-              ) : numPages === 0 ? (
-                <p className={styles.empty}>Cargando páginas…</p>
-              ) : (
-                Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
-                  <Thumbnail
-                    key={p}
-                    pageNum={p}
-                    isActive={p === currentPage}
-                    onClick={() => handleJump(p)}
-                  />
-                ))
+            <>
+              {currentFile && numPages > 0 && (
+                <div className={styles.sectionHeader}>
+                  <button className={styles.jumpToActiveBtn} onClick={scrollToActiveThumbnail}>
+                    Ir a la página actual (Pg. {currentPage})
+                  </button>
+                </div>
               )}
-            </div>
+              <div className={`${styles.content} ${styles.contentPages}`}>
+                {!currentFile ? (
+                  <p className={styles.empty}>Sin archivo abierto.</p>
+                ) : numPages === 0 ? (
+                  <p className={styles.empty}>Cargando páginas…</p>
+                ) : (
+                  Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
+                    <Thumbnail
+                      key={p}
+                      pageNum={p}
+                      isActive={p === currentPage}
+                      onClick={() => handleJump(p)}
+                    />
+                  ))
+                )}
+              </div>
+            </>
           )}
 
           {/* Files section */}

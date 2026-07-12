@@ -107,8 +107,77 @@
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-secondary);
-  white-space: pre-wrap;
   word-break: break-word;
+}
+
+.notePreview h1, .notePreview h2, .notePreview h3,
+.previewContainer h1, .previewContainer h2, .previewContainer h3 {
+  margin: 8px 0 4px 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.notePreview h1, .previewContainer h1 { font-size: 1.1rem; }
+.notePreview h2, .previewContainer h2 { font-size: 1.0rem; }
+.notePreview h3, .previewContainer h3 { font-size: 0.9rem; }
+
+.notePreview p, .previewContainer p {
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+}
+
+.notePreview blockquote, .previewContainer blockquote {
+  margin: 6px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.notePreview ul, .previewContainer ul {
+  margin: 4px 0 6px 16px;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.notePreview li, .previewContainer li {
+  margin-bottom: 2px;
+}
+
+.notePreview code, .previewContainer code {
+  background: var(--bg-hover);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.notePreview pre, .previewContainer pre {
+  background: var(--bg-input);
+  padding: 6px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 6px 0;
+  border: 1px solid var(--border-color);
+}
+
+.notePreview pre code, .previewContainer pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.75rem;
+}
+
+.previewContainer {
+  width: 100%;
+  min-height: 120px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-family: inherit;
+  overflow-y: auto;
+  cursor: text;
 }
 
 .selectionBadge {

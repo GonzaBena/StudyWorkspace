@@ -320,6 +320,46 @@ export function useSession() {
     });
   }, []);
 
+  const updateStats = useCallback((action: {
+    type: 'tick_file' | 'tick_work' | 'tick_break' | 'complete_pomodoro';
+    fileId?: string;
+    amount?: number;
+  }) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      const stats = prev.stats ?? {
+        pomodorosCompleted: 0,
+        totalWorkTime: 0,
+        totalBreakTime: 0,
+        timePerFile: {},
+      };
+      const updatedStats = { ...stats };
+      updatedStats.timePerFile = { ...stats.timePerFile };
+      const amount = action.amount ?? 1;
+
+      switch (action.type) {
+        case 'tick_file':
+          if (action.fileId) {
+            updatedStats.timePerFile[action.fileId] = (updatedStats.timePerFile[action.fileId] ?? 0) + amount;
+          }
+          break;
+        case 'tick_work':
+          updatedStats.totalWorkTime += amount;
+          break;
+        case 'tick_break':
+          updatedStats.totalBreakTime += amount;
+          break;
+        case 'complete_pomodoro':
+          updatedStats.pomodorosCompleted += 1;
+          break;
+      }
+
+      const updated = { ...prev, stats: updatedStats, updatedAt: Date.now() };
+      saveSession(updated);
+      return updated;
+    });
+  }, []);
+
   // ── derived ────────────────────────────────────────────────────────────────
 
   const currentFile = session ? session.files[session.currentFileIndex] ?? null : null;
@@ -346,6 +386,7 @@ export function useSession() {
     switchToFile,
     reorderFiles,
     renameSession,
+    updateStats,
     closeSession,
     deleteSession,
   };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Pencil, Download } from 'lucide-react';
 import styles from './StatusBar.module.css';
 import { progressColor } from '../utils/colors';
 import PomodoroTimer from './PomodoroTimer';
@@ -13,9 +13,26 @@ interface Props {
   sessionName: string;
   onRenameSession: (name: string) => void;
   onClose: () => void;
+  onExportPdf: () => void;
+  onTickWork: () => void;
+  onTickBreak: () => void;
+  onPomodoroComplete: () => void;
 }
 
-export default function StatusBar({ docProgress, listProgress, currentFileName, fileIndex, totalFiles, sessionName, onRenameSession, onClose }: Props) {
+export default function StatusBar({
+  docProgress,
+  listProgress,
+  currentFileName,
+  fileIndex,
+  totalFiles,
+  sessionName,
+  onRenameSession,
+  onClose,
+  onExportPdf,
+  onTickWork,
+  onTickBreak,
+  onPomodoroComplete,
+}: Props) {
   const docPct = Math.round(docProgress * 100);
   const listPct = Math.round(listProgress * 100);
   const [isEditing, setIsEditing] = useState(false);
@@ -44,17 +61,29 @@ export default function StatusBar({ docProgress, listProgress, currentFileName, 
           <div className={styles.filenameContainer}>
             <span
               className={styles.sessionName}
-              title="Doble clic para renombrar sesión"
-              onDoubleClick={() => { setEditName(sessionName); setIsEditing(true); }}
+              title="Haz clic para renombrar sesión"
+              onClick={() => { setEditName(sessionName); setIsEditing(true); }}
             >
               {sessionName}
             </span>
+            <button
+              className={styles.renameBtn}
+              onClick={() => { setEditName(sessionName); setIsEditing(true); }}
+              title="Renombrar sesión"
+              aria-label="Renombrar sesión"
+            >
+              <Pencil size={11} />
+            </button>
             <span className={styles.filename} title={currentFileName}>({currentFileName})</span>
           </div>
         )}
         <span className={styles.counter}>{fileIndex + 1} / {totalFiles}</span>
       </div>
-      <PomodoroTimer />
+      <PomodoroTimer
+        onTickWork={onTickWork}
+        onTickBreak={onTickBreak}
+        onPomodoroComplete={onPomodoroComplete}
+      />
       <div className={styles.bars}>
         <div className={styles.track} title={`Documento: ${docPct}%`}>
           <div
@@ -73,9 +102,14 @@ export default function StatusBar({ docProgress, listProgress, currentFileName, 
           <span style={{ color: progressColor(listPct) }}>{listPct}%</span>
         </div>
       </div>
-      <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar sesión">
-        <X size={14} /> Cerrar
-      </button>
+      <div className={styles.actions}>
+        <button className={styles.exportBtn} onClick={onExportPdf} aria-label="Exportar a PDF">
+          <Download size={14} /> Exportar PDF
+        </button>
+        <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar sesión">
+          <X size={14} /> Cerrar
+        </button>
+      </div>
     </header>
   );
 }

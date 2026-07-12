@@ -94,6 +94,51 @@
   margin-top: 1px;
 }
 
+.renameBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.renameBtn:hover {
+  color: var(--accent);
+  background-color: rgba(0, 200, 255, 0.08);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exportBtn {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.exportBtn:hover {
+  background: rgba(0, 200, 255, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .closeBtn {
   padding: 7px 14px;
   background: transparent;
@@ -119,5 +164,6 @@
 @media (max-width: 480px) {
   .bar { flex-wrap: wrap; gap: 8px; }
   .bars { width: 100%; order: 3; }
-  .closeBtn { padding: 6px 12px; }
+  .actions { width: 100%; justify-content: flex-end; }
+  .closeBtn, .exportBtn { padding: 6px 12px; }
 }

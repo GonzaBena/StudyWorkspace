@@ -10,6 +10,13 @@ export interface PdfFile {
   completed?: boolean;
 }
 
+export interface SessionStats {
+  pomodorosCompleted: number;
+  totalWorkTime: number; // in seconds
+  totalBreakTime: number; // in seconds
+  timePerFile: Record<string, number>; // fileId -> seconds spent
+}
+
 export interface Session {
   id: string;
   name: string;
@@ -19,4 +26,5 @@ export interface Session {
   updatedAt: number;
   hasHandles?: boolean;
   hasFileData?: boolean;
+  stats?: SessionStats;
 }

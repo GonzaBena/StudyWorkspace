@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from './PomodoroTimer.module.css';
 
-export default function PomodoroTimer() {
+interface Props {
+  onTickWork?: () => void;
+  onTickBreak?: () => void;
+  onPomodoroComplete?: () => void;
+}
+
+export default function PomodoroTimer({ onTickWork, onTickBreak, onPomodoroComplete }: Props) {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [isWork, setIsWork] = useState(true);
@@ -11,18 +17,28 @@ export default function PomodoroTimer() {
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(t => t - 1);
+        if (isWork) {
+          onTickWork?.();
+        } else {
+          onTickBreak?.();
+        }
       }, 1000);
     } else if (timeLeft === 0) {
       const nextMode = !isWork;
       setIsWork(nextMode);
       setTimeLeft(nextMode ? 25 * 60 : 5 * 60);
       setIsActive(false);
+      
+      if (isWork) {
+        onPomodoroComplete?.();
+      }
+      
       alert(nextMode ? '¡Tiempo de estudiar!' : '¡Tiempo de descanso!');
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, isWork]);
+  }, [isActive, timeLeft, isWork, onTickWork, onTickBreak, onPomodoroComplete]);
 
   const toggle = useCallback(() => setIsActive(a => !a), []);
   const reset = useCallback(() => {

@@ -197,3 +197,21 @@
 .togglesContainer > button {
   position: static !important;
 }
+
+.scrollActive {
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.15), rgba(123, 47, 255, 0.15)) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.navBtnLabel {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+@media (max-width: 580px) {
+  .navBtnLabel {
+    display: none;
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Quote, X } from 'lucide-react';
 import type { NoteItem } from '../utils/db';
+import { parseMarkdown } from '../utils/markdown';
 import styles from './NoteModal.module.css';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 
 export default function NoteModal({ note, onSave, onClose }: Props) {
   const [text, setText] = useState(note.text);
+  const [isFocused, setIsFocused] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -33,6 +35,8 @@ export default function NoteModal({ note, onSave, onClose }: Props) {
     onClose();
   };
 
+  const showPreview = !isFocused && text.trim().length > 0;
+
   return (
     <div className={styles.backdrop} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className={styles.modal} role="dialog" aria-modal="true">
@@ -50,14 +54,32 @@ export default function NoteModal({ note, onSave, onClose }: Props) {
           </div>
         )}
 
-        <textarea
-          ref={textareaRef}
-          className={styles.textarea}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSave(); }}
-          rows={5}
-        />
+        {showPreview ? (
+          <div
+            className={styles.previewContainer}
+            onClick={() => {
+              setIsFocused(true);
+              setTimeout(() => textareaRef.current?.focus(), 0);
+            }}
+            dangerouslySetInnerHTML={{ __html: parseMarkdown(text) }}
+            title="Haz clic para seguir editando"
+          />
+        ) : (
+          <textarea
+            ref={textareaRef}
+            className={styles.textarea}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => {
+              setTimeout(() => {
+                setIsFocused(false);
+              }, 150);
+            }}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSave(); }}
+            rows={5}
+          />
+        )}
 
         <div className={styles.footer}>
           <button className={styles.cancelBtn} onClick={onClose}>Cancelar</button>
