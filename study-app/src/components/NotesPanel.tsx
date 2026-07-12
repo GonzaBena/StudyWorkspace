@@ -28,7 +28,7 @@ export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote
     if (note.selectedText) {
       setTimeout(() => {
         window.getSelection()?.removeAllRanges();
-        window.find(note.selectedText!, false, false, true);
+        (window as any).find(note.selectedText!, false, false, true);
       }, 300);
     }
   };
