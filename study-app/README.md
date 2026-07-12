@@ -1,32 +1,55 @@
-# React + TypeScript + Vite
+# StudyProgress 📚
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**StudyProgress** es una aplicación web diseñada para ayudar a los estudiantes a gestionar y leer sus documentos de estudio (PDFs) haciendo un seguimiento de su progreso. Construida con React, TypeScript y Vite.
 
-Currently, two official plugins are available:
+## ✨ Características
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Visualizador de PDF integrado:** Lee tus documentos PDF directamente en el navegador de manera cómoda.
+- **Seguimiento de Progreso:** La aplicación guarda la página exacta en la que te quedaste en cada documento.
+- **Gestión de Sesiones:** Agrupa múltiples documentos en "Sesiones de Estudio" y retómalas cuando quieras.
+- **Marcadores (Bookmarks):** Guarda páginas importantes de tus PDFs para acceder a ellas rápidamente.
+- **Modo Oscuro y Modo Invertido:** Cuida tu vista con el modo oscuro general y la opción de invertir los colores de los documentos PDF.
+- **Privacidad y Funcionamiento Local:** Tus archivos y el progreso de lectura se procesan y almacenan localmente en tu navegador.
 
-## React Compiler
+## 🚀 Tecnologías
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19**
+- **TypeScript**
+- **Vite**
+- **react-pdf**
+- **animejs** (animaciones fluidas)
+- **canvas-confetti**
 
-## Expanding the Oxlint configuration
+## 📦 Instalación y Uso
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+1. **Abre una terminal en el directorio del proyecto:**
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+   ```bash
+   cd study-app
+   ```
+
+2. **Instala las dependencias:**
+   Se recomienda usar `pnpm` (que es el gestor de paquetes actual del proyecto), pero también puedes usar `npm` o `yarn`.
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Inicia el servidor de desarrollo:**
+
+   ```bash
+   pnpm run dev
+   ```
+
+4. **Abre en el navegador:**
+   La aplicación estará disponible típicamente en `http://localhost:5173`.
+
+## 🏗️ Construcción para Producción
+
+Para compilar la aplicación para producción, ejecuta:
+
+```bash
+pnpm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Esto generará los archivos estáticos optimizados en la carpeta `dist`, listos para ser desplegados.

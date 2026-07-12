@@ -10,6 +10,7 @@ interface Props {
 export default function HomeCard({ onFiles, onFolder }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const multiInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const hasFsApi = 'showOpenFilePicker' in window;
 
@@ -31,6 +32,15 @@ export default function HomeCard({ onFiles, onFolder }: Props) {
     }
   }, [hasFsApi, onFiles]);
 
+  const handleMultiFileBtn = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasFsApi) {
+      onFiles(new DataTransfer().files);
+    } else {
+      multiInputRef.current?.click();
+    }
+  }, [hasFsApi, onFiles]);
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(true);
@@ -47,6 +57,8 @@ export default function HomeCard({ onFiles, onFolder }: Props) {
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) onFiles(e.target.files);
   }, [onFiles]);
+
+  const hasFolder = 'showDirectoryPicker' in window;
 
   return (
     <div
@@ -72,17 +84,33 @@ export default function HomeCard({ onFiles, onFolder }: Props) {
         <div className={styles.dropIndicator}>
           <span /><span /><span />
         </div>
-        {('showDirectoryPicker' in window) && (
+        <div className={styles.btnRow}>
           <button
-            className={styles.folderBtn}
-            onClick={e => { e.stopPropagation(); onFolder(); }}
+            className={styles.actionBtn}
+            onClick={handleMultiFileBtn}
           >
-            📁 Abrir carpeta
+            📄 Abrir archivos
           </button>
-        )}
+          {hasFolder && (
+            <button
+              className={styles.actionBtn}
+              onClick={e => { e.stopPropagation(); onFolder(); }}
+            >
+              📁 Abrir carpeta
+            </button>
+          )}
+        </div>
       </div>
       <input
         ref={fileInputRef}
+        type="file"
+        accept=".pdf"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFileInput}
+      />
+      <input
+        ref={multiInputRef}
         type="file"
         accept=".pdf"
         multiple
