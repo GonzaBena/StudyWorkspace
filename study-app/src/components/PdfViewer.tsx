@@ -4,7 +4,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import {
   ChevronLeft, ChevronRight, RotateCcw, RotateCw, AlignJustify,
   MousePointer2, Hand, ArrowLeftRight, ArrowUpDown, Minus, Plus,
-  Bookmark, CheckCheck, X,
+  Bookmark, CheckCheck,
 } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
