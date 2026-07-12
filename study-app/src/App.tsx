@@ -12,7 +12,6 @@ import StatusBar from './components/StatusBar';
 import PdfViewer, { type ViewerConfig } from './components/PdfViewer';
 import ActivityBar from './components/ActivityBar';
 import DarkModeToggle from './components/DarkModeToggle';
-import DocInvertToggle from './components/DocInvertToggle';
 import PdfSessionReader from './components/PdfSessionReader';
 import StorageWarning from './components/StorageWarning';
 import type { Session } from './types';
@@ -53,6 +52,7 @@ export default function App() {
       setViewerConfig(DEFAULT_VIEWER_CONFIG);
       setView('reader');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.id]);
 
   const handleClose = useCallback(() => {
@@ -118,6 +118,7 @@ export default function App() {
               {(numPages, error, loading) => (
                 <>
                   <PdfViewer
+                    key={currentFile.id}
                     fileId={currentFile.id}
                     initialPage={currentFile.currentPage}
                     numPages={numPages}
@@ -133,6 +134,9 @@ export default function App() {
                     bookmarks={bookmarks}
                     onToggleBookmark={toggleBookmark}
                     onTextSelect={setLastSelection}
+                    isDark={isDark}
+                    onToggleDark={toggle}
+                    onToggleDocInvert={() => setDocInvert(v => !v)}
                   />
                   <ActivityBar
                     isOpen={activityOpen}
@@ -155,8 +159,6 @@ export default function App() {
             </PdfSessionReader>
           )}
         </div>
-        <DocInvertToggle inverted={docInvert} onToggle={() => setDocInvert(v => !v)} rightOffset={activityOpen ? activityBarWidth : 0} />
-        <DarkModeToggle isDark={isDark} onToggle={toggle} rightOffset={activityOpen ? activityBarWidth : 0} />
       </div>
     );
   }

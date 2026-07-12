@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import DarkModeToggle from './DarkModeToggle';
+import DocInvertToggle from './DocInvertToggle';
 import styles from './PdfViewer.module.css';
 
 type ZoomMode     = 'fit-width' | 'fit-height' | 'custom';
@@ -39,9 +41,31 @@ interface Props {
   bookmarks?: number[];
   onToggleBookmark?: (page: number) => void;
   onTextSelect?: (text: string) => void;
+  isDark: boolean;
+  onToggleDark: () => void;
+  onToggleDocInvert: () => void;
 }
 
-export default function PdfViewer({ fileId, initialPage, numPages, error, loading, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied, docInvert, bookmarks, onToggleBookmark, onTextSelect }: Props) {
+export default function PdfViewer({
+  fileId,
+  initialPage,
+  numPages,
+  error,
+  loading,
+  onPageChange,
+  onComplete,
+  config,
+  onConfigChange,
+  jumpRequest,
+  onJumpApplied,
+  docInvert,
+  bookmarks,
+  onToggleBookmark,
+  onTextSelect,
+  isDark,
+  onToggleDark,
+  onToggleDocInvert,
+}: Props) {
   const [page, setPage] = useState(initialPage);
   const [containerWidth, setContainerWidth]   = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -267,10 +291,13 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
       if (interactMode !== 'select') return;
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
-      const range = selection.getRangeAt(0);
-      if (!containerRef.current?.contains(range.commonAncestorContainer)) return;
+      const anchorNode = selection.anchorNode;
+      const focusNode = selection.focusNode;
+      const isInside = (anchorNode && containerRef.current?.contains(anchorNode)) ||
+                       (focusNode && containerRef.current?.contains(focusNode));
+      if (!isInside) return;
       const sel = selection.toString().trim();
-      if (sel) onTextSelect?.(sel);
+      onTextSelect?.(sel);
     };
     document.addEventListener('mouseup', handleDocMouseUp);
     return () => document.removeEventListener('mouseup', handleDocMouseUp);
@@ -280,6 +307,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
     if (numPages > 0) {
       onPageChange(fileId, page, numPages);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileId, numPages]);
 
   const onPageLoadSuccess = useCallback((pageProxy: { getViewport: (o: { scale: number }) => { width: number; height: number } }) => {
@@ -407,13 +435,14 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
         {error && <div className={styles.error}>Error al cargar el PDF. {error.message}</div>}
         {!loading && !error && ready && numPages > 0 && (
           viewMode === 'single' ? (
-            <div style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)' } : undefined}>
-              <Page pageNumber={page} onLoadSuccess={onPageLoadSuccess} rotate={rotation} {...pageProps} />
+            <div>
+              <div style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)', borderRadius: '4px', overflow: 'hidden' } : undefined}>
+                <Page pageNumber={page} onLoadSuccess={onPageLoadSuccess} rotate={rotation} {...pageProps} />
+              </div>
             </div>
           ) : (
             <div style={{
               display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', margin: 'auto',
-              ...(docInvert ? { filter: 'invert(1) hue-rotate(180deg)' } : {}),
             }}>
               {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
                 <div
@@ -429,6 +458,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
                       pageElemsRef.current.delete(p);
                     }
                   }}
+                  style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)', borderRadius: '4px', overflow: 'hidden' } : undefined}
                 >
                   <Page
                     pageNumber={p}
@@ -443,13 +473,19 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
         )}
       </div>
 
+      {/* Floating toggles container */}
+      <div className={styles.togglesContainer}>
+        <DocInvertToggle inverted={!!docInvert} onToggle={onToggleDocInvert} />
+        <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
+      </div>
+
       <nav className={styles.nav}>
         {page > 1 && (
-          <button onClick={goToFirstPage} className={styles.navBtn} tabIndex={-1} title="Primera página">
+          <button onClick={goToFirstPage} className={styles.navBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Primera página">
             <ChevronsLeft size={14} />
           </button>
         )}
-        <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn} tabIndex={-1}><ChevronLeft size={14} /> Anterior</button>
+        <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()}><ChevronLeft size={14} /> Anterior</button>
 
         {editingPage ? (
           <input
@@ -464,7 +500,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
             onKeyDown={onPageInputKey}
           />
         ) : (
-          <button className={styles.pageNum} onClick={startPageEdit} title="Haz clic para ir a una página">
+          <button className={styles.pageNum} onClick={startPageEdit} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Haz clic para ir a una página">
             {page} / {numPages || '…'}
           </button>
         )}
@@ -476,6 +512,8 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
               <button
                 onClick={() => onToggleBookmark(page)}
                 className={`${styles.zoomBtn} ${bookmarks?.includes(page) ? styles.zoomActive : ''}`}
+                tabIndex={-1}
+                onMouseDown={e => e.preventDefault()}
                 title={bookmarks?.includes(page) ? 'Quitar marca de página' : 'Marcar página'}
               >
                 <Bookmark size={14} fill={bookmarks?.includes(page) ? 'currentColor' : 'none'} />
@@ -487,12 +525,14 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
 
           {/* Rotation & View Mode */}
           <div className={styles.toolGroup}>
-            <button onClick={() => setRotation(r => (r - 90 + 360) % 360)} className={styles.zoomBtn} title="Rotar izquierda"><RotateCcw size={14} /></button>
-            <button onClick={() => setRotation(r => (r + 90) % 360)} className={styles.zoomBtn} title="Rotar derecha"><RotateCw size={14} /></button>
+            <button onClick={() => setRotation(r => (r - 90 + 360) % 360)} className={styles.zoomBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Rotar izquierda"><RotateCcw size={14} /></button>
+            <button onClick={() => setRotation(r => (r + 90) % 360)} className={styles.zoomBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Rotar derecha"><RotateCw size={14} /></button>
             <div className={styles.zoomDivider} />
             <button
               onClick={() => setViewMode(v => v === 'single' ? 'continuous' : 'single')}
               className={`${styles.zoomBtn} ${viewMode === 'continuous' ? styles.zoomActive : ''}`}
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
               title="Alternar vista continua"
             ><AlignJustify size={14} /></button>
           </div>
@@ -504,12 +544,16 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
             <button
               onClick={() => setInteractMode('select')}
               className={`${styles.zoomBtn} ${interactMode === 'select' ? styles.zoomActive : ''}`}
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
               title="Modo selección (texto)"
               aria-label="Modo selección"
             ><MousePointer2 size={14} /></button>
             <button
               onClick={() => setInteractMode('pan')}
               className={`${styles.zoomBtn} ${interactMode === 'pan' ? styles.zoomActive : ''}`}
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
               title="Modo desplazamiento"
               aria-label="Modo desplazamiento"
             ><Hand size={14} /></button>
@@ -519,36 +563,42 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
 
           {/* Zoom controls */}
           <div className={styles.toolGroup}>
-            <button onClick={handleZoomOut} className={styles.zoomBtn} title="Reducir (−)"><Minus size={14} /></button>
+            <button onClick={handleZoomOut} className={styles.zoomBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Reducir (−)"><Minus size={14} /></button>
             <span className={styles.zoomLabel}>{zoomLabel}</span>
-            <button onClick={handleZoomIn}  className={styles.zoomBtn} title="Ampliar (+)"><Plus size={14} /></button>
+            <button onClick={handleZoomIn}  className={styles.zoomBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Ampliar (+)"><Plus size={14} /></button>
             <div className={styles.zoomDivider} />
             <button
               onClick={() => setZoomMode('fit-width')}
               className={`${styles.zoomBtn} ${zoomMode === 'fit-width'  ? styles.zoomActive : ''}`}
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
               title="Ajustar al ancho"
             ><ArrowLeftRight size={14} /></button>
             <button
               onClick={() => setZoomMode('fit-height')}
               className={`${styles.zoomBtn} ${zoomMode === 'fit-height' ? styles.zoomActive : ''}`}
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
               title="Ajustar al alto"
             ><ArrowUpDown size={14} /></button>
             <div className={styles.zoomDivider} />
             <button
               onClick={() => setScrollPageTurn(v => !v)}
               className={`${styles.zoomBtn} ${scrollPageTurn ? styles.zoomActive : ''}`}
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
               title="Cambiar página al llegar al borde"
             ><ChevronsUpDown size={14} /></button>
           </div>
         </div>
 
         {isLast ? (
-          <button onClick={onComplete} className={`${styles.navBtn} ${styles.completeBtn}`} tabIndex={-1}><CheckCheck size={14} /> Completado</button>
+          <button onClick={onComplete} className={`${styles.navBtn} ${styles.completeBtn}`} tabIndex={-1} onMouseDown={e => e.preventDefault()}><CheckCheck size={14} /> Completado</button>
         ) : (
-          <button onClick={goNext} disabled={page >= numPages} className={styles.navBtn} tabIndex={-1}>Siguiente <ChevronRight size={14} /></button>
+          <button onClick={goNext} disabled={page >= numPages} className={styles.navBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()}>Siguiente <ChevronRight size={14} /></button>
         )}
         {!isLast && page < numPages && (
-          <button onClick={goToLastPage} className={styles.navBtn} tabIndex={-1} title="Última página">
+          <button onClick={goToLastPage} className={styles.navBtn} tabIndex={-1} onMouseDown={e => e.preventDefault()} title="Última página">
             <ChevronsRight size={14} />
           </button>
         )}

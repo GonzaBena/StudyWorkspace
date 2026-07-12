@@ -15,7 +15,10 @@ function formatDate(ts: number): string {
 
 function sessionProgress(session: Session): number {
   if (!session.files.length) return 0;
-  return session.currentFileIndex / session.files.length;
+  return session.files.reduce((sum, f) => {
+    if (f.completed) return sum + 1;
+    return sum + (f.totalPages > 0 ? f.currentPage / f.totalPages : 0);
+  }, 0) / session.files.length;
 }
 
 export default function RecentSessions({ sessions, onResume, onDelete }: Props) {
