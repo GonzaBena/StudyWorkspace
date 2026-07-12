@@ -106,7 +106,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
   // Usa numPages prop en lugar del que viene en currentFile si está desactualizado
   const currentPage = currentFile?.currentPage ?? 1;
 
-  const { notes, addNote, deleteNote } = useNotes(currentFile?.id);
+  const { notes, addNote, deleteNote, editNote } = useNotes(currentFile?.id);
 
   const handleJump = useCallback((p: number) => onJumpToPage(p), [onJumpToPage]);
 
@@ -243,6 +243,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
                   notes={notes}
                   onAddNote={addNote}
                   onDeleteNote={deleteNote}
+                  onEditNote={editNote}
                   onJumpToPage={handleJump}
                   lastSelection={lastSelection}
                   onClearSelection={onClearSelection}

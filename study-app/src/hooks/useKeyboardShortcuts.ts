@@ -18,6 +18,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         const handler = handlers[s.action];
         if (handler) {
           e.preventDefault();
+          e.stopPropagation();
           handler();
           return;
         }

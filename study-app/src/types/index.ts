@@ -7,6 +7,7 @@ export interface PdfFile {
   maxPage: number;      // furthest page reached — drives progress bars
   totalPages: number;
   url?: string;
+  completed?: boolean;
 }
 
 export interface Session {

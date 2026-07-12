@@ -155,8 +155,8 @@ export default function App() {
             </PdfSessionReader>
           )}
         </div>
-        <DocInvertToggle inverted={docInvert} onToggle={() => setDocInvert(v => !v)} />
-        <DarkModeToggle isDark={isDark} onToggle={toggle} />
+        <DocInvertToggle inverted={docInvert} onToggle={() => setDocInvert(v => !v)} rightOffset={activityOpen ? activityBarWidth : 0} />
+        <DarkModeToggle isDark={isDark} onToggle={toggle} rightOffset={activityOpen ? activityBarWidth : 0} />
       </div>
     );
   }

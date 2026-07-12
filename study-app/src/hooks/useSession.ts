@@ -239,15 +239,29 @@ export function useSession() {
   const completeFile = useCallback(() => {
     setSession(prev => {
       if (!prev) return prev;
-      const next = prev.currentFileIndex + 1;
-      if (next >= prev.files.length) {
+
+      // Mark current file as completed
+      const files = prev.files.map((f, i) =>
+        i === prev.currentFileIndex ? { ...f, completed: true } : f,
+      );
+
+      // Find next incomplete file: search forward from current+1, then from 0
+      let nextIdx = -1;
+      for (let offset = 1; offset <= files.length; offset++) {
+        const idx = (prev.currentFileIndex + offset) % files.length;
+        if (!files[idx].completed) { nextIdx = idx; break; }
+      }
+
+      if (nextIdx === -1) {
+        // All files done
         celebrateBig();
-        const updated = { ...prev, updatedAt: Date.now() };
+        const updated = { ...prev, files, currentFileIndex: files.length, updatedAt: Date.now() };
         saveSession(updated);
         return updated;
       }
+
       celebrate();
-      const updated = { ...prev, currentFileIndex: next, updatedAt: Date.now() };
+      const updated = { ...prev, files, currentFileIndex: nextIdx, updatedAt: Date.now() };
       saveSession(updated);
       return updated;
     });

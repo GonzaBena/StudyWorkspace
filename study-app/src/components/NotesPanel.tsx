@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowRight, Quote, X, Trash2 } from 'lucide-react';
+import { ArrowRight, Quote, X, Trash2, Pencil } from 'lucide-react';
 import type { NoteItem, NotesMap } from '../utils/db';
+import NoteModal from './NoteModal';
 import styles from './NotesPanel.module.css';
 
 interface Props {
@@ -8,13 +9,15 @@ interface Props {
   notes: NotesMap;
   onAddNote: (page: number, text: string, selectedText?: string) => void;
   onDeleteNote: (page: number, noteId: string) => void;
+  onEditNote: (page: number, noteId: string, newText: string) => void;
   onJumpToPage: (page: number) => void;
   lastSelection?: string;
   onClearSelection?: () => void;
 }
 
-export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote, onJumpToPage, lastSelection, onClearSelection }: Props) {
+export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote, onEditNote, onJumpToPage, lastSelection, onClearSelection }: Props) {
   const [text, setText] = useState('');
+  const [editingNote, setEditingNote] = useState<(NoteItem & { page: number }) | null>(null);
 
   const handleAdd = () => {
     if (!text.trim()) return;
@@ -23,22 +26,20 @@ export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote
     onClearSelection?.();
   };
 
-  const handleSelectionClick = (note: NoteItem & { page: number }) => {
-    onJumpToPage(note.page);
-    if (note.selectedText) {
-      setTimeout(() => {
-        window.getSelection()?.removeAllRanges();
-        (window as any).find(note.selectedText!, false, false, true);
-      }, 300);
-    }
-  };
-
   const allNotes = Object.entries(notes)
     .flatMap(([p, arr]) => arr.map(n => ({ ...n, page: Number(p) })))
     .sort((a, b) => a.page - b.page || a.createdAt - b.createdAt);
 
   return (
     <div className={styles.panel}>
+      {editingNote && (
+        <NoteModal
+          note={editingNote}
+          onSave={onEditNote}
+          onClose={() => setEditingNote(null)}
+        />
+      )}
+
       <div className={styles.editor}>
         <h4>Nueva nota · Página {currentPage}</h4>
 
@@ -77,6 +78,13 @@ export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote
                   <button className={styles.jumpBtn} onClick={() => onJumpToPage(note.page)}>
                     Ir <ArrowRight size={12} />
                   </button>
+                  <button
+                    className={styles.editBtn}
+                    onClick={() => setEditingNote(note)}
+                    title="Editar nota"
+                  >
+                    <Pencil size={12} />
+                  </button>
                   <button className={styles.deleteBtn} onClick={() => onDeleteNote(note.page, note.id)} title="Eliminar nota">
                     <Trash2 size={12} />
                   </button>
@@ -85,8 +93,8 @@ export default function NotesPanel({ currentPage, notes, onAddNote, onDeleteNote
               {note.selectedText && (
                 <div
                   className={styles.noteQuote}
-                  onClick={() => handleSelectionClick(note)}
-                  title="Ir al texto seleccionado"
+                  onClick={() => setEditingNote(note)}
+                  title="Ver cita y editar nota"
                 >
                   <Quote size={10} className={styles.quoteIcon} />
                   <span>{note.selectedText}</span>

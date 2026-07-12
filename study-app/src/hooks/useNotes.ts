@@ -54,5 +54,17 @@ export function useNotes(fileId: string | undefined) {
     });
   }, [fileId]);
 
-  return { notes, addNote, deleteNote };
+  const editNote = useCallback((page: number, noteId: string, newText: string) => {
+    if (!fileId || !newText.trim()) return;
+    setNotes(prev => {
+      const updated = {
+        ...prev,
+        [page]: (prev[page] ?? []).map(n => n.id === noteId ? { ...n, text: newText.trim() } : n),
+      };
+      saveNotes(fileId, updated);
+      return updated;
+    });
+  }, [fileId]);
+
+  return { notes, addNote, deleteNote, editNote };
 }

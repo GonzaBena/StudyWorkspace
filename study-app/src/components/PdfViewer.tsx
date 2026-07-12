@@ -2,9 +2,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Page } from 'react-pdf';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import {
-  ChevronLeft, ChevronRight, RotateCcw, RotateCw, AlignJustify,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  RotateCcw, RotateCw, AlignJustify,
   MousePointer2, Hand, ArrowLeftRight, ArrowUpDown, Minus, Plus,
-  Bookmark, CheckCheck,
+  Bookmark, CheckCheck, ChevronsUpDown,
 } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -14,9 +15,10 @@ type ZoomMode     = 'fit-width' | 'fit-height' | 'custom';
 type InteractMode = 'pan' | 'select';
 
 export interface ViewerConfig {
-  zoomMode:     ZoomMode;
-  customScale:  number;
-  interactMode: InteractMode;
+  zoomMode:      ZoomMode;
+  customScale:   number;
+  interactMode:  InteractMode;
+  scrollPageTurn?: boolean;
 }
 
 const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
@@ -50,6 +52,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
   const [interactMode, setInteractMode] = useState<InteractMode>(config.interactMode);
   const [naturalPageSize, setNaturalPageSize] = useState<{ width: number; height: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [scrollPageTurn, setScrollPageTurn] = useState(config.scrollPageTurn ?? false);
   // Page jump input
   const [editingPage, setEditingPage]   = useState(false);
   const [pageInput,   setPageInput]     = useState('');
@@ -91,8 +94,8 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
   // Propagate config changes to parent (skip initial mount per file)
   useEffect(() => {
     if (!configSynced.current) { configSynced.current = true; return; }
-    onConfigChange({ zoomMode, customScale, interactMode });
-  }, [zoomMode, customScale, interactMode]); // eslint-disable-line react-hooks/exhaustive-deps
+    onConfigChange({ zoomMode, customScale, interactMode, scrollPageTurn });
+  }, [zoomMode, customScale, interactMode, scrollPageTurn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-focus + select-all when the page input appears
   useEffect(() => {
@@ -231,6 +234,48 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
     };
   }, [interactMode]);
 
+  // Scroll-to-turn-page: wheel at edges advances/regresses page in single mode
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !scrollPageTurn || viewMode !== 'single') return;
+
+    let lastChangedAt = 0;
+    const onWheel = (e: WheelEvent) => {
+      const now = Date.now();
+      if (now - lastChangedAt < 600) return;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+      const atTop    = el.scrollTop <= 4;
+      if (e.deltaY > 0 && atBottom) {
+        lastChangedAt = now;
+        const p = scrollPageRef.current;
+        const total = numPages;
+        if (p < total) { const n = p + 1; setPage(n); onPageChange(fileId, n, total); }
+        else { onComplete(); }
+      } else if (e.deltaY < 0 && atTop) {
+        lastChangedAt = now;
+        const p = scrollPageRef.current;
+        if (p > 1) { const n = p - 1; setPage(n); onPageChange(fileId, n, numPages); }
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: true });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [scrollPageTurn, viewMode, numPages, fileId, onPageChange, onComplete]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Document-level mouseup to capture PDF text selection even when mouse released outside container
+  useEffect(() => {
+    const handleDocMouseUp = () => {
+      if (interactMode !== 'select') return;
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      const range = selection.getRangeAt(0);
+      if (!containerRef.current?.contains(range.commonAncestorContainer)) return;
+      const sel = selection.toString().trim();
+      if (sel) onTextSelect?.(sel);
+    };
+    document.addEventListener('mouseup', handleDocMouseUp);
+    return () => document.removeEventListener('mouseup', handleDocMouseUp);
+  }, [interactMode, onTextSelect]);
+
   useEffect(() => {
     if (numPages > 0) {
       onPageChange(fileId, page, numPages);
@@ -255,6 +300,16 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
     setPage(prev);
     onPageChange(fileId, prev, numPages);
   }, [page, numPages, fileId, onPageChange]);
+
+  const goToFirstPage = useCallback(() => {
+    setPage(1);
+    onPageChange(fileId, 1, numPages);
+  }, [fileId, numPages, onPageChange]);
+
+  const goToLastPage = useCallback(() => {
+    setPage(numPages);
+    onPageChange(fileId, numPages, numPages);
+  }, [fileId, numPages, onPageChange]);
 
   // The scale currently being rendered, regardless of mode
   const getEffectiveScale = useCallback((): number => {
@@ -318,11 +373,7 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
 
   const onMouseUp = useCallback(() => {
     setDragging(false);
-    if (interactMode === 'select') {
-      const sel = window.getSelection()?.toString().trim() ?? '';
-      if (sel) onTextSelect?.(sel);
-    }
-  }, [interactMode, onTextSelect]);
+  }, []);
   const onMouseLeave = useCallback(() => setDragging(false), []);
 
   const pageProps =
@@ -347,7 +398,6 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
       <div
         ref={containerRef}
         className={containerClass}
-        style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)' } : undefined}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
@@ -357,9 +407,14 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
         {error && <div className={styles.error}>Error al cargar el PDF. {error.message}</div>}
         {!loading && !error && ready && numPages > 0 && (
           viewMode === 'single' ? (
-            <Page pageNumber={page} onLoadSuccess={onPageLoadSuccess} rotate={rotation} {...pageProps} />
+            <div style={docInvert ? { filter: 'invert(1) hue-rotate(180deg)' } : undefined}>
+              <Page pageNumber={page} onLoadSuccess={onPageLoadSuccess} rotate={rotation} {...pageProps} />
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', margin: 'auto' }}>
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', margin: 'auto',
+              ...(docInvert ? { filter: 'invert(1) hue-rotate(180deg)' } : {}),
+            }}>
               {Array.from({ length: numPages }, (_, i) => i + 1).map(p => (
                 <div
                   key={p}
@@ -380,8 +435,6 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
                     onLoadSuccess={p === 1 ? onPageLoadSuccess : undefined}
                     rotate={rotation}
                     {...pageProps}
-                    renderAnnotationLayer={false}
-                    renderTextLayer={false}
                   />
                 </div>
               ))}
@@ -391,7 +444,12 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
       </div>
 
       <nav className={styles.nav}>
-        <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn}><ChevronLeft size={14} /> Anterior</button>
+        {page > 1 && (
+          <button onClick={goToFirstPage} className={styles.navBtn} tabIndex={-1} title="Primera página">
+            <ChevronsLeft size={14} />
+          </button>
+        )}
+        <button onClick={goPrev} disabled={page <= 1} className={styles.navBtn} tabIndex={-1}><ChevronLeft size={14} /> Anterior</button>
 
         {editingPage ? (
           <input
@@ -475,13 +533,24 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
               className={`${styles.zoomBtn} ${zoomMode === 'fit-height' ? styles.zoomActive : ''}`}
               title="Ajustar al alto"
             ><ArrowUpDown size={14} /></button>
+            <div className={styles.zoomDivider} />
+            <button
+              onClick={() => setScrollPageTurn(v => !v)}
+              className={`${styles.zoomBtn} ${scrollPageTurn ? styles.zoomActive : ''}`}
+              title="Cambiar página al llegar al borde"
+            ><ChevronsUpDown size={14} /></button>
           </div>
         </div>
 
         {isLast ? (
-          <button onClick={onComplete} className={`${styles.navBtn} ${styles.completeBtn}`}><CheckCheck size={14} /> Completado</button>
+          <button onClick={onComplete} className={`${styles.navBtn} ${styles.completeBtn}`} tabIndex={-1}><CheckCheck size={14} /> Completado</button>
         ) : (
-          <button onClick={goNext} disabled={page >= numPages} className={styles.navBtn}>Siguiente <ChevronRight size={14} /></button>
+          <button onClick={goNext} disabled={page >= numPages} className={styles.navBtn} tabIndex={-1}>Siguiente <ChevronRight size={14} /></button>
+        )}
+        {!isLast && page < numPages && (
+          <button onClick={goToLastPage} className={styles.navBtn} tabIndex={-1} title="Última página">
+            <ChevronsRight size={14} />
+          </button>
         )}
       </nav>
     </div>
