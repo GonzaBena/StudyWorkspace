@@ -119,3 +119,14 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.version {
+  position: fixed;
+  bottom: 14px;
+  left: 16px;
+  font-size: 0.72rem;
+  font-family: 'Space Grotesk', monospace;
+  color: color-mix(in srgb, var(--bg) 55%, var(--text-muted));
+  pointer-events: none;
+  user-select: none;
+}

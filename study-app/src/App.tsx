@@ -181,6 +181,7 @@ export default function App() {
         </div>
       )}
       <DarkModeToggle isDark={isDark} onToggle={toggle} />
+      <span className={styles.version}>v{__APP_VERSION__}</span>
     </div>
   );
 }
