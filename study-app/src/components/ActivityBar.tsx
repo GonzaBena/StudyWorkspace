@@ -21,6 +21,10 @@ interface Props {
   onReorderFiles: (oldIndex: number, newIndex: number) => void;
   bookmarks: number[];
   onToggleBookmark: (page: number) => void;
+  initialWidth?: number;
+  onWidthChange?: (w: number) => void;
+  lastSelection?: string;
+  onClearSelection?: () => void;
 }
 
 // ── Lazy thumbnail ────────────────────────────────────────────────────────────
@@ -80,11 +84,11 @@ const MIN_WIDTH = 200;
 const MAX_WIDTH_VW = 0.4;
 const DRAG_THRESHOLD = 4;
 
-export default function ActivityBar({ isOpen, onToggle, session, currentFile, numPages, onJumpToPage, onSwitchFile, onReorderFiles, bookmarks, onToggleBookmark }: Props) {
+export default function ActivityBar({ isOpen, onToggle, session, currentFile, numPages, onJumpToPage, onSwitchFile, onReorderFiles, bookmarks, onToggleBookmark, initialWidth, onWidthChange, lastSelection, onClearSelection }: Props) {
   const [section, setSection] = useState<Section>('pages');
   const [visible, setVisible] = useState(isOpen);
-  const [panelWidth, setPanelWidth] = useState(MIN_WIDTH);
-  const panelWidthRef = useRef(MIN_WIDTH);
+  const [panelWidth, setPanelWidth] = useState(initialWidth ?? MIN_WIDTH);
+  const panelWidthRef = useRef(initialWidth ?? MIN_WIDTH);
   const panelElRef = useRef<HTMLElement>(null);
   const dragRef = useRef<{ startX: number; startWidth: number; dragging: boolean } | null>(null);
 
@@ -102,7 +106,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
   // Usa numPages prop en lugar del que viene en currentFile si está desactualizado
   const currentPage = currentFile?.currentPage ?? 1;
 
-  const { notes, saveNote } = useNotes(currentFile?.id);
+  const { notes, addNote, deleteNote } = useNotes(currentFile?.id);
 
   const handleJump = useCallback((p: number) => onJumpToPage(p), [onJumpToPage]);
 
@@ -130,6 +134,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
         const w = parseInt(panelElRef.current.style.width, 10);
         panelWidthRef.current = w;
         setPanelWidth(w);
+        onWidthChange?.(w);
       }
       dragRef.current = null;
       window.removeEventListener('mousemove', onMove);
@@ -138,7 +143,7 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, [onToggle]);
+  }, [onToggle, onWidthChange]);
 
   return (
     <div className={styles.wrapper}>
@@ -236,8 +241,11 @@ export default function ActivityBar({ isOpen, onToggle, session, currentFile, nu
                 <NotesPanel
                   currentPage={currentPage}
                   notes={notes}
-                  onSaveNote={saveNote}
+                  onAddNote={addNote}
+                  onDeleteNote={deleteNote}
                   onJumpToPage={handleJump}
+                  lastSelection={lastSelection}
+                  onClearSelection={onClearSelection}
                 />
               ) : (
                 <p className={styles.empty}>Sin archivo abierto.</p>

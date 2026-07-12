@@ -59,7 +59,13 @@ export const loadFileData   = (id: string)                 => get<FileDataMap>(D
 export const removeFileData = (id: string)                 => del(DATA_STORE, id);
 
 // Notes per file
-export type NotesMap = Record<number, string>;
+export interface NoteItem {
+  id: string;
+  text: string;
+  selectedText?: string;
+  createdAt: number;
+}
+export type NotesMap = Record<number, NoteItem[]>;
 export const saveNotes   = (fileId: string, v: NotesMap) => put(NOTES_STORE, fileId, v);
 export const loadNotes   = (fileId: string)               => get<NotesMap>(NOTES_STORE, fileId);
 export const removeNotes = (fileId: string)               => del(NOTES_STORE, fileId);

@@ -36,9 +36,10 @@ interface Props {
   docInvert?: boolean;
   bookmarks?: number[];
   onToggleBookmark?: (page: number) => void;
+  onTextSelect?: (text: string) => void;
 }
 
-export default function PdfViewer({ fileId, initialPage, numPages, error, loading, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied, docInvert, bookmarks, onToggleBookmark }: Props) {
+export default function PdfViewer({ fileId, initialPage, numPages, error, loading, onPageChange, onComplete, config, onConfigChange, jumpRequest, onJumpApplied, docInvert, bookmarks, onToggleBookmark, onTextSelect }: Props) {
   const [page, setPage] = useState(initialPage);
   const [containerWidth, setContainerWidth]   = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -242,22 +243,18 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
   }, []);
 
   const goNext = useCallback(() => {
-    setPage(p => {
-      if (p >= numPages) return p;
-      const next = p + 1;
-      onPageChange(fileId, next, numPages);
-      return next;
-    });
-  }, [numPages, fileId, onPageChange]);
+    if (page >= numPages) return;
+    const next = page + 1;
+    setPage(next);
+    onPageChange(fileId, next, numPages);
+  }, [page, numPages, fileId, onPageChange]);
 
   const goPrev = useCallback(() => {
-    setPage(p => {
-      if (p <= 1) return p;
-      const prev = p - 1;
-      onPageChange(fileId, prev, numPages);
-      return prev;
-    });
-  }, [numPages, fileId, onPageChange]);
+    if (page <= 1) return;
+    const prev = page - 1;
+    setPage(prev);
+    onPageChange(fileId, prev, numPages);
+  }, [page, numPages, fileId, onPageChange]);
 
   // The scale currently being rendered, regardless of mode
   const getEffectiveScale = useCallback((): number => {
@@ -319,7 +316,13 @@ export default function PdfViewer({ fileId, initialPage, numPages, error, loadin
     el.scrollTop  = dragPos.current.scrollTop  - (e.clientY - dragPos.current.y);
   }, [dragging, interactMode]);
 
-  const onMouseUp = useCallback(() => setDragging(false), []);
+  const onMouseUp = useCallback(() => {
+    setDragging(false);
+    if (interactMode === 'select') {
+      const sel = window.getSelection()?.toString().trim() ?? '';
+      if (sel) onTextSelect?.(sel);
+    }
+  }, [interactMode, onTextSelect]);
   const onMouseLeave = useCallback(() => setDragging(false), []);
 
   const pageProps =

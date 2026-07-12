@@ -24,18 +24,20 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 type View = 'home' | 'reader';
 
 const DEFAULT_VIEWER_CONFIG: ViewerConfig = {
-  zoomMode: 'fit-width',
+  zoomMode: 'custom',
   customScale: 1,
   interactMode: 'select',
 };
 
 export default function App() {
   const { isDark, toggle } = useDarkMode();
-  const { session, currentFile, allDone, fileListProgress, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, reorderFiles, renameSession, closeSession, deleteSession } = useSession();
+  const { session, currentFile, allDone, fileListProgress, resuming, openFiles, openFolder, resumeSession, updatePage, completeFile, switchToFile, reorderFiles, renameSession, closeSession, deleteSession } = useSession();
   const [view, setView] = useState<View>('home');
   const [savedSessions, setSavedSessions] = useState<Session[]>([]);
   const [viewerConfig, setViewerConfig]   = useState<ViewerConfig>(DEFAULT_VIEWER_CONFIG);
   const [activityOpen, setActivityOpen]   = useState(true);
+  const [activityBarWidth, setActivityBarWidth] = useState(200);
+  const [lastSelection,   setLastSelection]     = useState('');
   const [jumpRequest,  setJumpRequest]    = useState<number | null>(null);
   const [docInvert,    setDocInvert]      = useState(false);
   const { bookmarks, toggleBookmark } = useBookmarks(currentFile?.id);
@@ -48,6 +50,7 @@ export default function App() {
 
   useEffect(() => {
     if (session) {
+      setViewerConfig(DEFAULT_VIEWER_CONFIG);
       setView('reader');
     }
   }, [session?.id]);
@@ -129,10 +132,15 @@ export default function App() {
                     docInvert={docInvert}
                     bookmarks={bookmarks}
                     onToggleBookmark={toggleBookmark}
+                    onTextSelect={setLastSelection}
                   />
                   <ActivityBar
                     isOpen={activityOpen}
                     onToggle={() => setActivityOpen(o => !o)}
+                    initialWidth={activityBarWidth}
+                    onWidthChange={setActivityBarWidth}
+                    lastSelection={lastSelection}
+                    onClearSelection={() => setLastSelection('')}
                     session={session}
                     currentFile={currentFile}
                     numPages={numPages}
@@ -167,6 +175,11 @@ export default function App() {
           onDelete={handleDelete}
         />
       </main>
+      {resuming && (
+        <div className={styles.resumingOverlay}>
+          <div className={styles.resumingSpinner} />
+        </div>
+      )}
       <DarkModeToggle isDark={isDark} onToggle={toggle} />
     </div>
   );

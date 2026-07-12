@@ -53,6 +53,7 @@ function buildSession(
 export function useSession() {
   const [session, setSession]   = useState<Session | null>(null);
   const [urls, setUrls]         = useState<Map<string, string>>(new Map());
+  const [resuming, setResuming] = useState(false);
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -162,6 +163,7 @@ export function useSession() {
   // ── resume ─────────────────────────────────────────────────────────────────
 
   const resumeSession = useCallback(async (saved: Session): Promise<boolean> => {
+    setResuming(true);
     const urlMap: Map<string, string> = new Map();
     const verifiedFiles: PdfFile[]    = [];
 
@@ -169,19 +171,24 @@ export function useSession() {
       if (saved.hasHandles) {
         const handles = await loadHandles(saved.id);
         if (handles?.length) {
-          for (let i = 0; i < handles.length; i++) {
+          const handleByName = new Map<string, FileSystemFileHandle>(
+            handles.map(h => [h.name, h]),
+          );
+          for (const pf of saved.files) {
+            const handle = handleByName.get(pf.name);
+            if (!handle) continue;
             try {
               const perm = await (
-                handles[i] as FileSystemFileHandle & {
+                handle as FileSystemFileHandle & {
                   requestPermission?: (o: object) => Promise<PermissionState>;
                 }
               ).requestPermission?.({ mode: 'read' });
               if (perm === 'denied') continue;
 
-              const file = await handles[i].getFile();
+              const file = await handle.getFile();
               const url  = URL.createObjectURL(file);
-              const pf   = saved.files[i];
-              if (pf) { urlMap.set(pf.id, url); verifiedFiles.push({ ...pf, url }); }
+              urlMap.set(pf.id, url);
+              verifiedFiles.push({ ...pf, url });
             } catch {
               // file deleted or access revoked — skip
             }
@@ -204,13 +211,14 @@ export function useSession() {
       console.error('resume error:', err);
     }
 
-    if (!verifiedFiles.length) return false;
+    if (!verifiedFiles.length) { setResuming(false); return false; }
 
     // Preserve currentFileIndex but clamp to available files
     const idx     = Math.min(saved.currentFileIndex, verifiedFiles.length - 1);
     const resumed = { ...saved, files: verifiedFiles, currentFileIndex: idx };
     setUrls(urlMap);
     setSession(resumed);
+    setResuming(false);
     return true;
   }, []);
 
@@ -312,6 +320,7 @@ export function useSession() {
 
   return {
     session,
+    resuming,
     currentFile,
     allDone,
     fileListProgress,
